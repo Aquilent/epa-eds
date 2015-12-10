@@ -1,0 +1,77 @@
+# This is a basic VCL configuration file for varnish.  See the vcl(7)
+# man page for details on VCL syntax and semantics.
+
+# Define the internal network subnet.
+# These are used below to allow internal access to certain files while not
+# allowing access from the public internet.
+#acl internal {
+#  "192.10.0.0"/24;
+#}
+
+# Default backend definition.  Set this to point to your content server.
+# Extended the timeouts to 600 seconds, it (probably) is better to have 
+# an individual user occasionally get an element that loads slowly or 
+# times out than many users across the site seeing an uninformative 503 
+# error code
+backend default {
+    .host = "127.0.0.1";
+    .port = "8080";
+    .connect_timeout = 600s;
+    .first_byte_timeout = 600s;
+    .between_bytes_timeout = 600s;
+}
+
+# Respond to incoming requests.
+sub vcl_recv {
+
+  if (req.url ~ "^/__health_check__$") {
+    error 702 "OK";
+    return (error);
+  }
+
+  return (pass);
+}
+
+# Set a header to track a cache HIT/MISS.
+sub vcl_deliver {
+  if ("" != "") {
+    # When using a load-balancer, set a variable here so you can check
+    # the headers to see which frontend served the request.
+    set resp.http.X-Server = "";
+  }
+
+  if (obj.hits > 0) {
+    set resp.http.X-Varnish-Cache = "HIT";
+  }
+  else {
+    set resp.http.X-Varnish-Cache = "MISS";
+  }
+}
+
+# Code determining what to do when serving items from the Apache servers.
+# beresp == Back-end response from the web server.
+sub vcl_fetch {
+  return (deliver);
+}
+
+# In the event of an error, show friendlier messages.
+sub vcl_error {
+
+  # Request was for the health check.
+  if(obj.status == 702) {
+    set obj.status = 200;
+    set obj.http.Content-Type = "text/html; charset=utf-8";
+    synthetic {"
+<!doctype html>
+<html>
+  <head>
+    <title>Health Check: Server is up</title>
+  </head>
+  <body>
+    <h1>Server  is up</h1>
+  </body>
+</html>
+"};
+  }
+  return (deliver);
+}

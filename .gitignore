@@ -1,0 +1,16 @@
+/target
+/bin/create-stack.cmd
+/bin/create-stack.sh
+/src/main/cloud-formation
+/src/main/chef-templates
+/src/main/stack-configuration-defaults.ini
+/src/main/bootstrap
+/bin/ssh-bastion.cmd
+/bin/upload-certificates.cmd
+/bin/setenv.cmd
+/bin/package.cmd
+/bin/package.sh
+/src/test/chef/bastion/.vagrant
+/src/test/chef/default/.vagrant
+/src/test/chef/bastion/*.pem
+/src/test/chef/default/*.stackdump

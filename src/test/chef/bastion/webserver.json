@@ -1,0 +1,28 @@
+{
+   "epa_eds": {
+      "project_name": "DEFAULT-TEST",
+      "environment": "int",
+      "aws_region": "us-east1", // Normally a placeholder
+      "aws_logwatch": {
+          "install": true,
+          "log_group": "DUMMY_LOGGROUP_NAME", // Normally a placeholder
+          "files": {  // files to watch in addition to default files
+             "httpd-error": {"path": "/var/log/httpd/error.log"},
+             "httpd-access": {"path": "/var/log/httpd/access.log"}
+          }
+      },
+      "iptables": {
+          "rules": {
+              "webserver": "platform/iptables/webserver"
+          }
+      },
+      "webserver": {
+          "use_varnish": false
+      }
+   },
+   "run_list": [
+      "recipe[epa_eds::platform]",
+      "recipe[epa_eds::webserver]"
+   ]
+}
+

@@ -1,0 +1,358 @@
+#!/bin/sh
+
+SCRIPT_NAME='manage-code'
+export PLATFORM_HOME="/opt/epa-eds"
+
+. "${PLATFORM_HOME}/bin/functions"
+
+CONFIG_FILE="${PLATFORM_HOME}/conf/manage.conf"
+
+# -- parameters
+FRESH=
+BRANCH=
+RESTART="${TRUE_VALUE}"
+RUN_UPDATE="${TRUE_VALUE}"
+ACTION=
+ENVIRONMENT="int"
+
+SSH_BYPASSHOSTCHECK="${FALSE_VALUE}"
+
+# -- properties
+APP_CERTIFICATE=
+APP_HOSTNAME=
+WEB_CERTIFICATE=
+WEB_HOSTNAME=
+DEVOPS_USER=`whoami`
+
+
+# -- other local variables
+BRANCH_PATH=
+LOCAL_DIR=
+LOCAL_UPDATE_DONE=
+FORCED_CHECKOUT=
+
+TEST_ACTION=
+PROMOTE_ACTION=
+
+function usage {
+    local message="$1"
+    local exit_code=0
+
+    if [ "${message}" != "" ]; then
+        echo "ERROR: ${message}" >&2
+        echo "" >&2
+        exit_code=1
+    fi
+
+    cat <<EOF
+Usage: SCRIPT_NAME [OPTIONS] [promote | test]
+
+promote
+    Promote code from the GitHub to a designated environment. Will check out the 
+    designated code to a local directory, copy the necessary files to the web server, 
+    and restart the services on the web servers to affect the change.
+    Note that on an initial promotion all code will be checked-out to the local directory,
+    but on subsequent promotions, only the changed code will be pulled from GitHub.
+    To force all code to be checked out use the --fresh option.
+
+Options:
+  --branch=branch, -b=branch   Check out a specific (development) branch.
+                               Defaults to trunk.
+  --config-file=path, -c=path  Use the give path to find the configuration file.
+                               Defaults to ${CONFIG_FILE}.
+  --fresh, -f                  Refreshes the local checked out version of 
+                               the development branch.
+  --no-restart                 By default the relavent services on the app and web 
+                               servers are restarted. By providing this option this
+                               step is skipped. Not that skipping this step may cause 
+                               certain changes to not be in effect, specifically due
+                               to caching.
+  --no-update                  By default all pending software updates are applied
+                               to both the web server. By providing this option, 
+                               this step is skipped.
+  --quiet, -q                  Show less information.
+  --verbose, -v                Show more information. Repeat this option to 
+                               get even more information.
+EOF
+
+    exit $exit_code
+}
+
+
+function set_non_option_parameter {
+    local value="$1"
+
+    case "${value}" in
+        promote|test)    ;;
+        *)               usage "Unknown action '${value}'" ;;
+    esac
+    if [ "${ACTION}" != "" ]; then
+        usage "Action already set to '${ACTION}'"
+    fi
+    ACTION="${value}"
+}
+
+function get_parameters {
+    while test $# -gt 0; do
+        case $1 in
+          --app-host*)          APP_HOSTNAME=`get_parameter "--app-host" "$1"` ;;
+          --branch*|-b*)        epxort BRANCH=`get_parameter "(-b|--branch)" "$1"` ;;
+          --bypass-hostcheck)   SSH_BYPASSHOSTCHECK="${TRUE_VALUE}" ;;
+          --config-file*|-c*)   CONFIG_FILE=`get_parameter "(-c|--config-file)" "$1"` ;;
+          --environment*|-e*)   ENVIRONMENT=`get_parameter "(-e|--environment)" "$1"` ;;
+          --fresh|-f)           FRESH="${TRUE_VALUE}" ;;
+          --help|-h)            usage ;;
+          --no-restart)         RESTART="${FALSE_VALUE}" ;;
+          --no-update)          RUN_UPDATE="${FALSE_VALUE}" ;;
+          --quiet|-q)           set__quiet ;;
+          --tag*|-t*)           BUILD_TAG=`get_parameter "(--tag|-t)" "$1"` ;;
+          --verbose|-v)         set_verbose ;;
+          --web-host*)          WEB_HOSTNAME=`get_parameter "--web-host" "$1"` ;;
+          *)                    set_non_option_parameter "${1}" ;;
+        esac
+        shift
+    done
+}
+
+function get_properties {
+    local current_user=`whoami`
+
+    if [ "${CONFIG_FILE}" == "" ];  then
+      exit_error "No configuration file specified."
+    fi  
+    if [ "${ENVIRONMENT}" == "" ];  then
+      exit_error "No environment specified."
+    fi  
+    case $ENVIRONMENT in
+        int|test|prod)    ;;
+        *)                exit_error "Unknown environment '${ENVIRONMENT}'." ;;
+    esac
+    local ENV=`echo "${ENVIRONMENT}" | awk '{print toupper($1);}'`
+
+    if [ "${APP_HOSTNAME}" == "" ]; then
+        # NOT provided as a parameter, hence use the value from the configuration file
+        APP_HOSTNAME=`get_property "${ENV}_APP_HOSTNAME"`
+    fi
+    APP_CERTIFICATE=`get_property "${ENV}_APP_CERTIFICATE"`
+
+    if [ "${WEB_HOSTNAME}" == "" ]; then
+        # NOT provided as a parameter, hence use the value from the configuration file
+        WEB_HOSTNAME=`get_property "${ENV}_WEB_HOSTNAME"`
+    else
+        writeln "WEB_HOSTNAME=${WEB_HOSTNAME}"
+    fi
+    WEB_CERTIFICATE=`get_property "${ENV}_WEB_CERTIFICATE"`
+
+    HOME="/home/${current_user}"
+    DEVOPS_USER=`get_property "DEVOPS_USER"`
+    PROJECT=`get_property "PROJECT"`
+    AWS_REGION=`get_property "REGION"`
+    BUCKET_NAME=`get_property "S3_BUCKET_NAME"`
+    CHARGE_CODE=`get_property "CHARGE_CODE"`
+    GIT_OWNER=`get_property "GIT_OWNER"`
+    GIT_REPO=`get_property "GIT_REPO"`
+    GIT_CERT=`get_property "GIT_CERT"`
+    GIT_USER=`get_property "GIT_USER" "${current_user}"`
+    if [ "${BRANCH_NAME}" == "" ]; then
+        BRANCH_NAME=`get_property "${ENV}_BRANCH_NAME" "master"`
+    fi
+
+    LOCAL_DIR_PREFIX=`get_property "LOCAL_DIR_PREFIX" "/var/tmp/${PROJECT}/${ENVIRONMENT}"`
+    LOCAL_DIR="${LOCAL_DIR_PREFIX}/${BRANCH_PATH}"
+}
+
+function initialize {
+    get_parameters "$@"
+    get_properties
+
+    if [ "${FRESH}" != "" ]; then
+        rm -rf "${LOCAL_DIR}"
+    fi
+    if [ ! -d "${LOCAL_DIR}" ]; then
+        mkdir -p "${LOCAL_DIR}"
+    fi
+}
+
+function setup_ssh_agent {
+    eval `ssh-agent -s`> /dev/null
+}
+
+function kill_ssh_agent {
+    if [ ${SSH_AGENT_PID+1} == 1 ]; then
+       ssh-add -D
+       ssh-agent -k > /dev/null 2>&1
+       unset SSH_AGENT_PID
+       unset SSH_AUTH_SOCK
+    fi
+}
+
+function copy_sources {
+    local to_dir="$1"
+    local dir=`mktemp -d`
+    local rsync_options="--recursive --update --delete --exclude .git/"
+    setup_ssh_agent
+
+    if [ -d "${dir}" ]; then
+        rm -rf "${dir}"
+    fi
+    mkdir "${dir}"
+    pushd "${dir}" > /dev/null 2>&1
+    writeln "Cloning ${BRANCH_NAME} ${GIT_OWNER}/${GIT_REPO} using ${GIT_CERT}"
+    ssh-add -t 30 "/home/${GIT_USER}/.ssh/${GIT_CERT}"
+    git clone --branch "${BRANCH_NAME}" "ssh://git@github.com/${GIT_OWNER}/${GIT_REPO}.git"
+    kill_ssh_agent
+    verbose "Preparing to copy sources to '${to_dir}'"
+    mkdir -p "${dir}/web"
+    if [ -d "${dir}/${GIT_REPO}/src/main/php" ]; then
+      rsync $rsync_options "${dir}/${GIT_REPO}/src/main/php" "${to_dir}/web/"
+    else 
+        writeln "No application (PHP) sources found"
+    fi
+    if [ -d "${dir}/${GIT_REPO}/src/main/varnish" ]; then
+        rsync $rsync_options "${dir}/${GIT_REPO}/src/main/varnish" "${to_dir}/web/"
+    else 
+        writeln "No varnish sources found"
+    fi
+    #mkdir -p "${dir}/app"
+    popd > /dev/null 2>&1
+    rm -rf "${dir}"
+}
+
+
+function update_local {
+    local action="$1"
+    WORK_DIR="${LOCAL_DIR}/${action}"
+    mkdir -p "${WORK_DIR}"
+    copy_sources "${WORK_DIR}"
+}
+
+
+function execute_remote_before_update {
+    local sync_dir="$1"
+    local server_type="$2"
+    local commands="sudo mkdir -p '${sync_dir}'"
+    commands="${commands}; sudo chmod 777 '${sync_dir}'"
+    if [ "${RUN_UPDATE}" == "${TRUE_VALUE}" ]; then
+        commands="${commands}; sudo yum -y update"
+    fi
+    echo "bash -c '${commands}'"
+}
+
+function execute_remote_after_update {
+    local sync_dir="$1"
+    local type="$2"
+    local commands="sudo chmod 755 ${sync_dir}/synchronize"
+    if [ "${VERBOSE}" != "" ]; then
+        verbose="--verbose"
+    fi
+    # Call synchronize command on remote server to complete process 
+    commands="${commands}; sudo ${sync_dir}/synchronize --server-type '${type}'"
+    commands="${commands} --sync-dir '${sync_dir}/${type}' ${verbose}"
+    if [ "${RESTART}" != "${TRUE_VALUE}" ]; then
+        commands="${commands} --no-restart"
+    fi
+    echo "bash -c '${commands}'"
+}
+
+function update_remote {
+    local certificate="${WEB_CERTIFICATE}"
+    local hostname="${WEB_HOSTNAME}"
+    
+    writeln "Updating 'web' server at '${hostname}' as '${DEVOPS_USER}' from '${HOME}'"
+
+    local int_ssh=`ssh_command "${certificate}" "${DEVOPS_USER}@${hostname}" "" \\
+        "${SSH_BYPASSHOSTCHECK}"`
+    local int_sync_dir="/tmp/epa-eds/promote"
+    local int_scp=`scp_command "${certificate}" "" "${SSH_BYPASSHOSTCHECK}"`
+    local synchronize_file="/opt/epa-eds/bin/synchronize"
+    local mainsrc="${WORK_DIR}/web"
+    local redirect=
+
+    if [ "${QUIET}" != "" ]; then 
+        redirect=' 2>&1 > /dev/null'
+    fi
+
+    writeln "Prepare web server for copying files"
+    local commands=`execute_remote_before_update "${int_sync_dir}"`
+    verbose_verbose "${int_ssh} ${commands}"
+    $int_ssh $commands $redirect 
+    on_error_exit "$?" "Failed to prepare '${hostname}' for update"
+
+    writeln "Copy files to web server [${int_sync_dir}]"
+    verbose_verbose "$int_scp ${synchronize_file} ${hostname}:${int_sync_dir}/"
+    $int_scp "${synchronize_file}" "${DEVOPS_USER}@${hostname}:${int_sync_dir}/"
+    on_error_exit "$?" "Failed to sync script to '${hostname}' for update"
+    verbose_verbose "$int_scp -r ${mainsrc} ${hostname}:${int_sync_dir}"
+    $int_scp -r "${mainsrc}" "${DEVOPS_USER}@${hostname}:${int_sync_dir}"
+    on_error_exit "$?" "Failed to sync sources to '${hostname}' for update"
+
+    writeln "Synchronize files on web server"
+    commands=`execute_remote_after_update "${int_sync_dir}" "web"`
+    verbose_verbose "${int_ssh} ${commands}"
+    $int_ssh $commands $redirect 
+    on_error_exit "$?" "Failed to aaply sync script at '${hostname}' for update"
+}
+
+function promote_code {
+    update_local "promote"
+    update_remote
+    verbose "Code promoted"
+}
+
+
+function install_php_composer {
+    local application_home="$1"
+    local log=`mktemp`
+
+    writeln "(Re)install PHP composer into [${application_home}]"
+    curl -sS https://getcomposer.org/installer | php -- --install-dir="/tmp" &> $log
+    pushd "${application_home}" > /dev/null 2>&1
+    php "/tmp/composer.phar" install &> $log
+    popd > /dev/null 2>&1
+    rm -f "/tmp/composer.phar"
+    rm -f $log
+}
+
+function add_phpunit_output {
+    local directory="$1"
+    local output_type="$2"
+    local extension="$3"
+    local output_home="/var/lib/jenkins/jobs/deploy-to-${ENVIRONMENT}/workspace/${directory}"
+    local output_file="${output_home}/${BUILD_TAG}.${extension}"
+    mkdir -p "${output_home}"
+    chmod 775 "${output_home}"
+    writeln "Storing test results results in '${output_file}'"
+    echo "${output_type} ${output_file}"
+}
+
+function test_code {
+    update_local "test"
+    local test_output_home=""
+    local application_home="${WORK_DIR}/web/php"
+    local vendor_home="${application_home}/vendor"
+    local phpunit_path="phpunit/phpunit/phpunit"
+    local inline="${vendor_home}/${phpunit_path} --bootstrap ${vendor_home}/autoload.php"
+    local output_file=""
+
+    writeln "Running PHP unit tests"
+    if [ "${BUILD_TAG}" != "" ]; then
+        inline="${inline} "`add_phpunit_output 'test_results' '--log-junit' 'xml'`
+    else 
+        writeln "No BUILD_TAG found. Writing results to stdout"
+    fi
+    inline="${inline} ${application_home}/tests"
+
+    install_php_composer "${application_home}"
+    verbose "About to execute [${inline}]"
+    $inline
+}
+
+initialize "$@"
+
+
+case "${ACTION}" in
+    promote)        test_code; promote_code ;;
+    test)           test_code ;;
+    *)              usage "No action was specified; Please specifiy 'promote' or 'test' action." ;;
+esac
+

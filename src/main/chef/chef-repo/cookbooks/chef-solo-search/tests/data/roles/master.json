@@ -1,0 +1,9 @@
+{
+    "name": "master",
+    "default_attributes": { },
+    "override_attributes": { },
+    "json_class": "Chef::Role",
+    "description": "This is just a master role, no big deal.",
+    "run_list": [
+    ],
+    "chef_type": "role"

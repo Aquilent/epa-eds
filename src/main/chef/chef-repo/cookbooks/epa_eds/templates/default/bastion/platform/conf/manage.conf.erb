@@ -1,0 +1,29 @@
+
+PROJECT=<%= node['epa_eds']['project_name'] %>
+REGION=<%= node['epa_eds']['aws_region'] %>
+S3_BUCKET_NAME=<%= node['epa_eds']['s3_bucket_name'] %>
+
+GIT_OWNER=<%= node['epa_eds']['git_owner'] %>
+GIT_REPO=<%= node['epa_eds']['git_repo'] %>
+GIT_CERT=<%= node['epa_eds']['project_name'] %>-github-ci.pem
+
+DEVOPS_USER=<%= node['epa_eds']['bastion']['devops_user'] %>
+
+INT_WEB_PROTOCOL=<%= node['epa_eds']['bastion']['int_web_protocol'] %>
+INT_WEB_HOSTNAME=<%= node['epa_eds']['bastion']['int_web_hostname'] %>
+INT_WEB_CERTIFICATE=<%= node['epa_eds']['project_name'] %>-int-web.pem
+INT_BRANCH_NAME=integration
+INT_URL=<%= node['epa_eds']['bastion']['int_url'] %>
+
+TEST_WEB_PROTOCOL=<%= node['epa_eds']['bastion']['test_web_protocol'] %>
+TEST_WEB_HOSTNAME=<%= node['epa_eds']['bastion']['test_web_hostname'] %>
+TEST_WEB_CERTIFICATE=<%= node['epa_eds']['project_name'] %>-test-web.pem
+TEST_BRANCH_NAME=test
+INT_URL=<%= node['epa_eds']['bastion']['test_url'] %>
+
+PROD_WEB_PROTOCOL=<%= node['epa_eds']['bastion']['prod_web_protocol'] %>
+PROD_WEB_HOSTNAME=<%= node['epa_eds']['bastion']['prod_web_hostname'] %>
+PROD_WEB_CERTIFICATE=<%= node['epa_eds']['project_name'] %>-prod-web.pem
+PROD_BRANCH_NAME=master
+INT_URL=<%= node['epa_eds']['bastion']['prod_url'] %>
+

@@ -1,0 +1,6 @@
+
+# ---------- Outbound Database Traffic -------------------------------------
+# Allow the following ports through to outside MySQL server
+-A OUTPUT -p tcp -m tcp --dport 3306 -j ACCEPT
+
+

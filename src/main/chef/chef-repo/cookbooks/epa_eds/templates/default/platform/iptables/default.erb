@@ -1,0 +1,38 @@
+
+# ----------- localhost Connections -----------------------------
+# Accept traffic from loopback interface (localhost)
+-A INPUT -i lo -j ACCEPT
+-A OUTPUT -o lo -j ACCEPT
+
+# ----------- Established Connections  --------------------------
+# Allow established connections:
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A OUTPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+# ----------- ICMP Connections ----------------------------------
+# Accept icmp ping requests
+-A INPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+# All pings out e.g responding to inbound pings!
+-A OUTPUT -p icmp -m icmp --icmp-type 8 -j ACCEPT
+
+# ------------ NTP Connnections ---------------------------------
+# Allow outbound UDP requests to NTP servers on port 123
+-A OUTPUT -p udp -m udp --dport 123 -j ACCEPT
+
+# ------------ SSH Connnections ---------------------------------
+# Allow SSH And SCP Packets
+-A INPUT -p tcp -m tcp --dport 22 -j ACCEPT
+# Allow connecting to other servers on port 22
+-A OUTPUT -p tcp -m tcp --dport 22 -j ACCEPT
+
+# ------------- DNS Connections ---------------------------------
+# Allow our server to complete DNS lookups
+-A OUTPUT -p udp -m udp --dport 53 -j ACCEPT
+# Allow outbound calls to servers, e.g. for yum updates
+-A OUTPUT -p tcp -m tcp --dport 80 -j ACCEPT
+-A OUTPUT -p tcp -m tcp --dport 443 -j ACCEPT
+
+
+# ------------- Debugging ONLY ----------------------------------
+# Log EVERYTHING 
+#-A INPUT -j LOG

@@ -1,0 +1,83 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require '../Common.rb'
+
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # All Vagrant configuration is done here. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  include Common
+
+
+  BASTION_IP = isEmpty(ENV['WEBSERVER_IP']) ? '192.168.10.2' : ENV['BASTION_IP']
+  WEBSERVER_IP = isEmpty(ENV['WEBSERVER_IP']) ? '192.168.10.3' : ENV['WEBSERVER_IP']
+
+  config.vm.boot_timeout = 600;
+
+  config.vm.define "webserver" do |webserver|
+    # Every Vagrant virtual environment requires a box to build off of.
+    webserver.vm.box = DEFAULT_VAGRANT_BOX
+
+    # Create a private network that allows host-only access to the machine using a specific IP.
+    puts "----- Server IP set to #{WEBSERVER_IP} "
+    webserver.vm.network "private_network", :ip => WEBSERVER_IP
+
+    puts "----- Mount #{CHEF_SOURCE_PATH} to #{PROJECT_CHEF_HOME}"
+    webserver.vm.synced_folder "#{SOURCE_PATH}/chef", PROJECT_CHEF_HOME, 
+        create: true,  owner: "root", group: "root"
+
+    puts "----- Mount #{SOURCE_PATH}/php to '#{APPLICATION_HOME}' "
+    puts ""
+    puts "WARNING: Changes made to files in '#{APPLICATION_HOME}' in the guest VM are reflected in the host system."
+    puts ""
+    webserver.vm.synced_folder "#{SOURCE_PATH}/php", "#{APPLICATION_HOME}",
+        create: true, owner: "root", group: "root"
+
+     webserver.vm.provision "shell" do | s |
+        s.path = "#{CHEF_SOURCE_PATH}/bin/run-chef.sh"
+        s.args = ["/vagrant/webserver.json", "--yum-suppress", "--log-stdout"]
+     end
+
+  end
+
+  config.vm.define "bastion" do |bastion|
+    # Every Vagrant virtual environment requires a box to build off of.
+    bastion.vm.box = DEFAULT_VAGRANT_BOX
+
+    # Create a private network that allows host-only access to the machine using a specific IP.
+    puts "----- Server IP set to #{BASTION_IP} "
+    bastion.vm.network "private_network", :ip => BASTION_IP
+
+    puts "----- Mount #{CHEF_SOURCE_PATH} to #{PROJECT_CHEF_HOME}"
+    bastion.vm.synced_folder "#{SOURCE_PATH}/chef", PROJECT_CHEF_HOME, 
+        create: true,  owner: "root", group: "root"
+
+    # Provide key to ssh to webserver VM
+    bastion.vm.provision "file", source: ".vagrant/machines/webserver/virtualbox/private_key",
+        destination: "/vagrant/DEFAULT-TEST-int-web.pem"
+    bastion.vm.provision "shell", path: "./install_ssh_keys.sh"
+
+    if isEmpty(ENV['PROJECT_GITHUB_KEY_PATH']) then
+        puts "No Github Key provided. Code promotion will not work."
+        puts "To provide a Github Key PROJECT_GITHUB_KEY_PATH"
+    else
+        # Provide GitHub key to clone branches from github
+        bastion.vm.provision "file", source: ENV['PROJECT_GITHUB_KEY_PATH'],
+            destination: "/vagrant/DEFAULT-TEST-github-ci.pem"
+    end
+
+    bastion.vm.provision "shell", path: "./install_ssh_keys.sh"
+
+    bastion.vm.provision "shell" do | s |
+        s.path = "#{CHEF_SOURCE_PATH}/bin/run-chef.sh"
+        s.args = ["/vagrant/bastion.json", "--yum-suppress", "--log-stdout"]
+    end
+  end
+
+
+end

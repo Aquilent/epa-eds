@@ -1,0 +1,1179 @@
+
+# -*-Shell-script-*-
+#
+# functions     This file contains functions to be used by most or all
+#               shell scripts in the /opt/drupal-platform/bin directory.
+#
+
+export TRUE_VALUE='true'
+export FALSE_VALUE='false'
+export AWS="/usr/bin/aws"
+export AWS_INSTANCE_STATE_RUNNING='running'
+export AWS_INSTANCE_STATUS_PASSED='passed'
+
+if [ -z "${AWS_REGION+x}" ]; then
+        export AWS_REGION="us-east-1"
+fi
+
+if [ -z "${CONFIG_FILE+x}" ]; then
+        CONFIG_FILE=""
+fi
+
+
+SOMEWHAT_VERBOSE="--verbose"
+EXTRA_VERBOSE="${SOMEWHAT_VERBOSE} ${SOMEWHAT_VERBOSE}"
+
+if [ -z "${QUIET+x}" ]; then
+    QUIET=""
+fi
+if [ -z "${VERBOSE+x}" ]; then
+    VERBOSE=""  
+fi
+if [ -z "${LOG_FILE+x}" ]; then
+    LOG_FILE=""
+fi
+
+NEWLINE=$'\n'
+
+
+# ---------------------------------------------------------------------------------------
+# 
+#  AWS Common function
+#
+#
+# ---------------------------------------------------------------------------------------
+
+
+function get_timestamp {
+    echo "$(date +'%Y%m%d-%H%M')"
+}
+
+
+function write {
+    if [ "${QUIET}" == "" ]; then
+        echo -n $@ 1>&2
+    fi
+}
+
+function writeln {
+    if [ "${QUIET}" == "" ]; then
+        if [ "${VERBOSE}" != "" ]; then
+            echo -n "----- " 1>&2
+        fi
+        echo "$@"  1>&2
+    fi
+}
+
+function log {
+    if [ "${LOG_FILE}" == "" ]; then
+        return
+    fi
+    local now="$(date +'%Y-%m-%d %H:%M:%S,%3N')"
+    echo -e $now $* >> ${LOG_FILE}
+}
+
+function set_quiet {
+    QUIET='true'
+    VERBOSE=
+}
+
+function verbose {
+  if [ "${VERBOSE}" == "" ]; then
+      return 0
+  fi
+  echo -e "$@" 1>&2
+}
+
+function verbose_verbose {
+  if [ "${VERBOSE}" != "${EXTRA_VERBOSE}" ]; then
+      return 0
+  fi
+  echo -e "$@" 1>&2
+}
+
+function set_verbose {
+    if [ "${VERBOSE}" == "" ]; then 
+         VERBOSE="${SOMEWHAT_VERBOSE}"
+    else 
+        VERBOSE="${EXTRA_VERBOSE}" 
+    fi      
+}
+
+function is_verbose {
+    local level="$1"
+    if [ "${VERBOSE}" == "" ]; then 
+        if [ "${level}" == "" ] || [ "${VERBOSE}" ==  "${level}" ]; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+
+function set_trace {
+    TRACE=true
+    NONTRACE_VERBOSE="${VERBOSE}"
+    VERBOSE="${EXTRA_VERBOSE}"
+}
+
+function unset_trace {
+    TRACE=
+    VERBOSE="${NONTRACE_VERBOSE}"
+}
+
+function trace {
+    if [ "${TRACE}" != "" ]; then
+        echo -e "$@" 1>&2
+    fi
+}
+
+function start_progress {
+    local message="$@"
+    write "$1 ."
+    if [ "${VERBOSE}" != "" ]; then
+        writeln ""
+    fi
+}
+function show_progress {
+    local message="$@"
+    if [ "${VERBOSE}" == "" ]; then
+        write "."
+    else
+        verbose "${message}"
+    fi
+}
+
+function end_progress {
+    local message="$1"
+    local verbose_message="$2 $3 $4 $5"
+    if [ "${VERBOSE}" == "" ]; then
+        writeln " ${message}"
+    elif [ "${verbose_message}" != "" ]; then
+        verbose "${verbose_message}"
+    fi
+}
+
+
+function on_error_exit {
+    local error_code="$1"
+    local message="$2"
+    if [ ! $error_code -eq  0 ]; then
+        exit_error "(code=${error_code}) $message"
+    fi
+}
+
+function exit_error {
+    local message=$@
+    echo "ERROR: ${message}" 1>&2
+    exit 1
+}
+
+function get_property {
+    local property="$1"
+    local defaultValue="$2"
+    local config_file="$3"
+    local propertyRE="^${property}="
+
+    if [ "${config_file}" == "" ]; then
+        config_file="${CONFIG_FILE}"
+    fi 
+
+    if [ -f "${config_file}" ];  then
+        # When the lines matches propertyRE (property at the beginning of the line followed by '='
+        # then strip propertyRE from the entire line and return the rest
+        local value=`awk -F "=" -v propertyRE="${propertyRE}" '
+            $0 ~ propertyRE {gsub(propertyRE, "", $0); print $0}' "${config_file}"`
+    else
+        verbose_verbose "No value found , because configuration file '${config_file}' not found."
+    fi
+    if [ "${value}" == "" ]; then
+        verbose_verbose "No value found for property '${property}'. Using default '${defaultValue}'."
+        value="${defaultValue}"
+    fi
+    echo "${value}"
+}
+
+function get_parameter {
+    local property="$1"
+    local text="$2"
+    local default_value="$3"
+    local propertyRE="^${property}="
+    local value=`echo "${text}" | awk -F "=" -v propertyRE="${propertyRE}" '
+            $0 ~ propertyRE {gsub(propertyRE, "", $0); print $0}'`
+    verbose_verbose "'$property'='$value'"
+    if [ "${value}" == "" ]; then
+        value="${default_value}"
+        verbose_verbose "assigned default: '$property'='$value'"
+    fi
+    echo "${value}"
+}
+
+
+function ssh_command {
+    local certificate="$1"
+    local hostname="$2"
+    local options="$3"
+    local bypass_hostcheck="$4"
+    local ssh_command="ssh -t -t -q"
+    if [ "${certificate}" == "" ]; then
+        echo "Do not know how to make a secure connection."
+        echo "Provide ${hostname} certificate in ${CONFIG_FILE}"
+        exit 1
+    fi
+    local certificate_path=${HOME}/.ssh/${certificate}
+    if [ ! -f "${certificate_path}" ]; then
+        echo "Do not know how to make a secure connection."
+        echo "Certificate ${certificate_path} not found."
+        exit 1
+    fi
+    ssh_command="${ssh_command} -i ${certificate_path}"
+    if [ "${bypass_hostcheck}" == "${TRUE_VALUE}" ]; then
+        #options="${options} -o UserKnownHostsFile=/dev/null"
+        options="${options} -o StrictHostKeyChecking=no"
+    fi
+    echo "$ssh_command $hostname $options"
+}
+
+
+function scp_command {
+    local certificate="$1"
+    local options="$2"
+    local bypass_hostcheck="$3"
+    local scp_command="scp -q -p -C"
+    if [ "${certificate}" == "" ]; then
+        echo "Do not know how to make a secure connection."
+        echo "Provide ${hostname} certificate in ${CONFIG_FILE}"
+        exit 1
+    fi
+    local certificate_path=${HOME}/.ssh/${certificate}
+    if [ ! -f "${certificate_path}" ]; then
+        echo "Do not know how to make a secure connection."
+        echo "Certificate ${certificate_path} not found."
+        exit 1
+    fi
+    scp_command="${scp_command} -i ${certificate_path}"
+    if [ "${bypass_hostcheck}" == "${TRUE_VALUE}" ]; then
+        #options="${options} -o UserKnownHostsFile=/dev/null"
+        options="${options} -o StrictHostKeyChecking=no"
+    fi
+    echo "$scp_command $options"
+}
+
+function run_command {
+    local message="$1"
+    shift
+    local cmd=$@
+    local error_file=`mktemp`
+    local result=
+
+    writeln "${message}" 
+    verbose_verbose "Run command: [${cmd}]"
+    if [ "${QUIET}" == "" ]; then
+        $cmd 
+    else
+        local result=`$cmd 2> $error_file`
+        if [ -f $error_file ]; then
+            local n=`wc --lines $error_file | awk '{print$1}'`
+            if [ $n -gt 0 ]; then
+                local errors=`cat $error_file`
+                writeln "${errors}"
+                exit 1
+            fi
+            rm -f $error_file
+        fi
+    fi
+}
+
+function run_on_server {
+    local message=$1
+    local certificate="$2"
+    local hostname="$3"
+    shift; shift; shift;
+    local remote_cmd=$@
+    local ssh_cmd=`ssh_command "${certificate}" "${hostname}" "" "${TRUE_VALUE}"`
+    run_command "${message}" $ssh_cmd $remote_cmd
+}
+
+function create_password {
+    local length="$1"
+
+    if [ $length -lt 8 ]; then
+        length=8
+    fi
+    date +%s | sha256sum | base64 | head -c $length | awk '{ gsub(/[\/\"@]/, '_', $0); print $0;}'
+}
+
+function create_version_id {
+  local versionID=`date +"%Y%m%d-%H%M"`
+  echo "${versionID}" | awk '{gsub(/[ \t\n\r]/,"-", $0); print $0;}'
+}
+
+
+function capitalize {
+    echo $1 | awk ' {
+            for (i = 1; i <= NF; i++) {
+                $i = toupper(substr($i, 1, 1)) substr($i, 2);
+                print $i;
+            }
+        }'
+}
+
+function continue_yes_no {
+    local header=$1
+    local prompt="${header}. Do you want to continue [yes|no]? "
+    local answer=''
+
+    while [ "${answer}" == "" ]; do
+        if [ "${VERBOSE}" == "" ];  then
+            writeln ""
+        fi
+        read -p "${prompt}" -e answer
+        case "${answer}" in
+            yes|no)    ;;
+            *)         answer='' ; echo "Please type 'yes' or 'no'" 1>&2 ;;
+        esac
+    done
+    echo $answer
+}
+
+
+
+function join_all {
+    local IFS="$1"
+    shift
+    echo -e "$*"
+}
+
+
+
+# ---------------------------------------------------------------------------------------
+# 
+#  ASW Common function
+#
+#
+# ---------------------------------------------------------------------------------------
+
+function get_aws_field {
+    local record="$1"
+    local name="$2"
+    local pattern="${3:-.*}"
+    local trim_value="${34-$TRUE_VALUE}"
+    local do_trim=1
+    if [ "${trim_value}" != "${TRUE_VALUE}" ]; then
+        trim_value=""
+    fi
+    local value=`echo -e "${record}" | awk -F "," -v name="${name}" -v pattern="${pattern}" \
+        -v do_trim="${trim_value}" ' 
+            function fix(value, do_trim) {
+                gsub(/^[ ]*\"/, "", value);
+                gsub(/\"$/, "", value);
+                if (do_trim) {
+                    gsub(/^[ ]*/,"", value);
+                    gsub(/[ ]*$/,"", value);
+                }
+                return value;
+            }
+            { 
+                for (i = 1; i <= NF; i++) {
+                    n = index($i, ":")
+                    field_name= fix(substr($i, 1, n-1), 0)
+                    if (name == field_name) {
+                        field_value = fix(substr($i, n+1), do_trim)
+                        if (match(field_value, pattern)) {
+                            print field_value;
+                        }
+                    }
+                }
+            }'`
+    echo -e "${value}"
+}
+
+function flatten_list {
+    awk '
+        BEGIN {found=-1;}
+        /\{/ { 
+            found=found+1; 
+            line[found]="";
+            next;
+        }
+        /\}/ {
+            print line[found];
+            found=found-1;
+            next;
+        }
+        {
+            if (found > -1) {
+                gsub(/^[ \t]*/, "", $0); 
+                gsub(/[ \t]*$/, "", $0); 
+                line[found]=line[found]$0
+            } 
+        }'
+}
+
+function delabel_list {
+    local field_names="$1"
+    local separator="${2:-\t}"
+    local record=''
+    local fields=''
+    local value=
+    local has_value="${FALSE_VALUE}"
+    while read record; do
+        fields=''
+        record=`echo -e "${record}" | sed -e 's/^{//g' -e 's/}$//g'`
+        #trace "get ${field_names} from [${record}]"
+        for field_name in $field_names; do
+            value=`get_aws_field "${record}" "${field_name}"`
+            if [ "${value}" != "null" ]; then
+                has_value="${TRUE_VALUE}"
+            fi
+            #trace "${field_name}=[${value}]"
+            if [ "${fields}" != "" ]; then
+                fields="${fields}${separator}"
+            fi
+            fields="${fields}${value}"
+        done
+        #trace "fields=${fields}"
+        if [ "${has_value}" == "${TRUE_VALUE}" ]; then
+            echo -e "${fields}"
+        fi
+    done
+}
+
+function reverse_list {
+    tac
+}
+
+function get_first {
+    head -1
+}
+
+function list_sort_by_column {
+    sort -k"$1"
+}
+
+
+function descriptor_query_attributes {
+    awk -F "," -v quote="'" ' 
+        function quoted(value, quote) {
+            return sprintf("%1s%s%1s", quote, value, quote);
+        }
+        BEGIN { attributes=""; } 
+        {
+            name = $1;
+            value = "";
+            if (match($2, /^tag:/)) {
+                n = index($2,":");
+                key = substr($2, n+1);
+                value = sprintf ("Tags[?Key==%s].Value|[0]", quoted(key, quote));
+            } else {
+                value = $2;
+            }
+            if (attributes != "") { attributes = attributes ","}
+            attributes = attributes name ":" value;
+        }
+        END { printf("%s", attributes); }'
+}
+
+function descriptor_table_info {
+    awk -F "," ' 
+        BEGIN { info=""; } 
+        {
+            if (info != "") { info = info "," }
+            info = info $1 ":%" $3 "s"
+        }
+        END { printf("%s", info);  }'
+}
+
+
+function descriptor_attributes {
+    awk -F "," ' 
+        BEGIN { info=""; } 
+        { 
+            if ( info != "" ) {
+                info = info ",";
+            }
+            info = info $1; 
+        }
+        END { printf("%s", info);  }'
+}
+
+function describe_attribute {
+    local record="$1"
+    local name="$2"
+    local indent="${3:-  }"
+    local separator="${4:-=}"
+    local value=`get_aws_field "${record}" "${name}"`
+    echo -e "${indent}${name}${separator}'${value}'"
+}
+
+function describe_records {
+    local record_name="$1"
+    local attribute_names="$2"
+    local id_attribute="${3:-Id}"
+    local IFS=","
+    trace "id_attribute=${id_attribute}"
+    while read record; do
+        local id=`get_aws_field "${record}" "${id_attribute}"`
+        echo "${record_name} '${id}'"
+        for attribute in ${attribute_names[@]}; do
+            if [ "${attribute}" != "${id_attribute}" ]; then
+               describe_attribute "${record}" "${attribute}"
+            fi
+        done
+    done
+}
+
+function show_list_as_table {
+    local descriptor="$1"
+    local null_replacement="${2:--}"
+    local separator="${3:-\t}"
+
+    verbose_verbose "Show table using descriptor [${descriptor}]"
+    awk -F "${separator}" -v descriptor="${descriptor}" -v null_replacement="${null_replacement}" '
+        function size(array, i, n) {
+            n = 0; 
+            for (i in array) { n++; }
+            return n;
+        }
+        function get_header(descriptor, format, columns) {
+            split(descriptor, columns, ",");
+            n = size(columns);
+            header = "";
+            for (i = 1; i <= n; i++) {
+                column = columns[i]
+                m = index(column, ":");
+                name = substr(column, 1, m - 1);
+                format[i] = substr(column, m + 1);
+                if (i > 1) { 
+                    header = header sprintf("\t"); 
+                }
+                header = header sprintf(format[i], name);
+            }
+            return header;
+        }
+        BEGIN { 
+            header = get_header(descriptor, format);
+            separator = header;
+            gsub(/[^\t]/, "-", separator)
+            print header;
+            print separator;
+            count = 0;
+        }
+        {
+            for(i = 1; i <= NF; i++) {
+                if (i > 1) {
+                    printf("\t");
+                }
+                if ($i == "null") {
+                    $i = null_replacement;
+                }
+                printf(format[i], $i);
+            }
+            printf("\n");
+            count++;
+        }
+        END {
+            if (count > 10) {
+                print separator;
+                print header;
+            }
+            print "";
+        }'
+}
+
+function create_attribute {
+    local name="$1"
+    local key="${2:-$name}"
+    echo -e "${name}:${key}"
+}
+function create_tag_attribute {
+    local name="$1"
+    local key="${2:-$name}"
+    create_attribute "${name}" "Tags[?Key=='${key}'].Value|[0]"
+}
+
+function create_aws_filter {
+    local name="$1"
+    local old_IFS="${IFS}"
+    shift
+    IFS=","
+    echo -e "Name=${name},Values=$*"
+    IFS="${old_IFS}"
+}
+
+function create_aws_tag_filter {
+    local name="$1"
+    local old_IFS="${IFS}"
+    shift
+    IFS=","
+    echo -e "Name=tag:${name},Values=$*"
+    IFS="${old_IFS}"
+}
+
+function find_aws_resources {
+    local service=""
+    local resource_type=""
+    local attributes=""
+    local query=""
+    local filters=()
+    local arguments=()
+    local separator=
+    local field_names=
+    local output="table"
+    local n_filters=0
+
+    while test $# -gt 0; do
+        case $1 in
+          --argument*|-a*)     arguments+=(`get_parameter "(--argument|-a)" "$1"`);;
+          --filter*|-f*)       filters+=(`get_parameter "(--filter|-f)" "$1"`);;
+          --project*|-p*)      project=`get_parameter "(--project|-p)" "$1" "${PROJECT}"`;;
+          --query*|-q*)        query=`get_parameter "(--query|-q)" "$1"` ;;
+          --separator*|-s*)    separator=`get_parameter "(--separator|-s)" "$1"` ;;
+          --output*|-o*)       output=`get_parameter "(--output|-o)" "$1"` ;;
+          *)                   if [ "${service}" == "" ]; then
+                                   service="$1"
+                               elif [ "${resource_type}" == "" ]; then
+                                   resource_type="$1"
+                               elif [ "${attributes}" == "" ]; then
+                                   attributes="$1"
+                               else 
+                                   exit_error "Unknown parameter $1"
+                               fi
+                               ;;
+        esac
+        shift
+    done
+    if [ "${service}" == "" ]; then 
+        exit_error "Missing service"
+    fi
+    if [ "${resource_type}" == "" ]; then
+        exit_error "Missing resource_type"
+    fi
+    if [ "${attributes}" == "" ]; then
+        exit_error "Missing attributes"
+    fi
+    if [ "${query}" == "" ]; then
+        query=`capitalize "${resource_type}s[]"`
+    fi
+    if [ "${service}" == "" ]; then
+        service="ec2"
+    fi
+    if [ "${separator}" == "" ]; then
+        separator="\t"
+    fi
+    case $output in
+        table|json)    ;;
+        "")            output="table";;
+        *)             exit_error "Unknown output type '${output}'." \
+                        " Expected one of {table, json}.";;
+    esac
+    query="${query}.{${attributes}}"
+    field_names=`echo "${attributes}" | tr ',' '\n' | awk '
+            { n = index($0, ":"); print substr($0, 1, n-1) }' | paste -s`
+
+    n_filters=${#filters[*]}
+    verbose_verbose "find ${service} ${resource_type}s with query=[${query}] " \
+        "filters=["${filters[*]}";#"${n_filters}"] and arguments[${arguments[*]}]" \
+        " yields ${output} [${field_names}]"
+    filters_args=""
+    if [ ${n_filters} -gt 0 ]; then
+         trace "set filter_args"
+         filters_args="--filters ${filters[*]}"
+    fi
+    trace "filter_args=${filter_args}"
+
+    local result=`$AWS "${service}" describe-${resource_type}s --region ${AWS_REGION} \
+        --query ${query} $filters_args ${arguments[*]}`
+
+    trace "result=[${result}]"
+    result=`echo -e "${result}" | flatten_list`
+    trace "flattened result=[${result}]"
+    if [ "${output}" == "table" ]; then
+        result=`echo -e "${result}" | delabel_list "${field_names}" "${separator}"`
+        trace "result-as-table=[${result}]"
+    fi
+    echo -e "${result}"
+}
+
+function wait_for_aws_resource {
+    local service=""
+    local resource_type=""
+    local id_attribute=""
+    local attribute=""
+    local id=""
+    local await_status="available"
+    local iterations="20"    # default is 20 iterations
+    local delay="15"         # default is 15 seconds
+    local error_file=`mktemp`
+    local attibutes=
+    local query=
+    local message=
+    local describe_command=
+    local status=
+    local resource=
+    local filters=()
+    local arguments=()
+
+    while test $# -gt 0; do
+        case $1 in
+          --argument*|-a*)     arguments+=("--argument="`get_parameter "(--argument|-a)" "$1"`);;
+          --delay*|-d*)        delay=`get_parameter "(--delay|-d)" "$1"`;;
+          --filter*|-f*)       filters+=("--filter="`get_parameter "(--filter|-f)" "$1"`);;
+          --id-attribute*)     id_attribute=`get_parameter "(--id-attribute)" "$1"`;;
+          --iterations*|-i*)   iterations=`get_parameter "(--iterations|-i)" "$1"`;;
+          --message*|-m*)      message=`get_parameter "(--message|-m)" "$1"`;;
+          --project*|-p*)      project=`get_parameter "(--project|-p)" "$1" "${PROJECT}"`;;
+          --query*|-q*)        query=`get_parameter "(--query|-q)" "$1"` ;;
+          --separator*|-s*)    separator=`get_parameter "(--separator|-s)" "$1"` ;;
+          --wait-status*|-w*)  await_status=`get_parameter "(--wait-status|-w)" "$1"` ;;
+          *)                   if [ "${service}" == "" ]; then
+                                   service="$1"
+                               elif [ "${resource_type}" == "" ]; then
+                                   resource_type="$1"
+                               elif [ "${attribute}" == "" ]; then
+                                   attribute="$1"
+                               elif [ "${id}" == "" ]; then
+                                   id="$1"
+                               else 
+                                   exit_error "Unknown parameter $1"
+                               fi
+                               ;;
+        esac
+        shift
+    done
+    if [ "${service}" == "" ]; then 
+        exit_error "Missing service"
+    fi
+    if [ "${resource_type}" == "" ]; then
+        exit_error "Missing resource_type"
+    fi
+    if [ "${attribute}" == "" ]; then
+        exit_error "Missing attribute"
+    fi
+    if [ "${id}" == "" ]; then
+        exit_error "Missing id"
+    fi
+    if [ "${id_attribute}" == "" ]; then
+        id_attribute=`capitalize "${resource_type}Id"`
+    fi
+    attributes="${attribute}:${attribute}"
+    if [ "${query}" == "" ]; then
+        query=`capitalize "${resource_type}s[?${id_attribute}=='${id}']"`
+    fi
+
+    if [ "${await_status}" == "" ]; then
+        await_status="available"
+    fi
+    if [ $iterations -lt 5 ]; then
+        iterations=20
+    fi
+    if [ $delay -lt 5 ] || [ $delay -gt 60 ]; then
+        delay=15
+    fi
+    if [ "${message}" != "" ]; then
+        message="${message}: "
+    fi
+    resource="${resource_type} ${id}"
+    verbose_verbose "Wait for ${service} ${resource} using ${attribute}"
+    describe_command="find_aws_resources ${service} ${resource_type} ${attributes}"
+    describe_command="${describe_command} "${arguments[@]}" ${filters[*]}"
+    if [ "${query}" != "" ]; then
+        describe_command="${describe_command} --query=${query}"
+    fi
+    status_message="${message}Waiting for '${resource}' to become ${await_status}"
+    trace "describe_command=[${describe_command}]"
+    start_progress "${status_message}"
+    for i in $(seq 1 $iterations);  do
+        sleep $delay
+        status=`$describe_command | get_first 2> $error_file`
+        if [ -f $error_file ]; then
+            local n=`wc --lines $error_file | awk '{print$1}'`
+            if [ $n -gt 0 ]; then
+                local errors=`cat $error_file`
+                verbose_verbose "${errors}"
+            fi
+            rm -f $error_file
+        fi
+        show_progress "'${resource}' status is '${status}'" 
+        if [ "${status}" == "${await_status}" ]; then
+            break
+        fi
+    done
+    rm -f $error_file
+    if [ "${status}" != available ]; then
+        end_progress "timed-out" "${message}Timed-out. Discontinue wait."
+        exit_error "${message}Timed-out "${status_message}
+    else 
+        end_progress "ready" "${resource}' is ${await_status}"
+    fi
+}
+
+
+
+
+
+
+
+
+
+# function filter_field {
+#     local i="${1:-1}"
+#     local value=`cut -f$i`
+#     trace "get_field $i from [${line}] yields [${value}]"
+#     echo "${value}"
+# }
+
+# function get_field {
+#     local line="$1"
+#     local i="${2:-1}"
+#     local value=`echo "${line}" | cut -f$i`
+#     trace "get_field $i from [${line}] yields [${value}]"
+#     echo "${value}"
+# }
+
+# function append_field {
+#     local line="$1"
+#     local value="$2"
+#     echo -e "${line}\t${value}"
+# }
+
+# # ------------------------------------------------------------------------------------------------
+# #   Get property value from AWS JSON output.
+# #   NOTE: This will return all matching properties
+# #      name - Name of the property
+# #      info - The JSON value
+# # ------------------------------------------------------------------------------------------------
+# function get_aws_property {
+#     local name="$1"
+#     local info="$2"
+#     local n="$3"
+#     if [ "${n}" == "" ] || [ $n -lt 1 ]; then
+#         n=1
+#     fi
+#     local lines="-${n}"
+#     local value=`echo "${info}" | grep "\"${name}\"" | head "${lines}" | \
+#         awk -F': ' '{ 
+#             gsub(/^[ ]*/, "", $2);
+#             gsub(/[ ]*$/, "", $2);
+#             gsub(/[",]/, "", $2);
+#             print $2; 
+#         }'`
+#     trace "aws json property: ${name}=[${value}]"
+#     echo "${value}"
+# }
+
+# # ------------------------------------------------------------------------------------------------
+# #   Get the indexed field from a line with a given prefix when multiple line are provided.
+# #      prefix - The prefix of the line from which to extract the field
+# #      index  - The index of the field (fields are separated by tabs)
+# #      leader - (optional) Indicates the prefix of a line preceding the prefixed line
+# #      max    - (optional) By default return allvalues found. 
+# #               When argument is 1 or higher, limit returned amount to value given
+# # ------------------------------------------------------------------------------------------------
+# function get_value {
+#     local prefix="$1"
+#     local index="$2"
+#     local leader="$3"
+#     local max="${4:-0}"
+#     get_values "${prefix}" "${index}" "${leader}" 1
+# }
+# function get_values {
+#     local prefix="$1"
+#     local index="$2"
+#     local leader="$3"
+#     local max="${4:--1}"
+#     local values=`awk -F "\t" -v leader="${leader}" -v prefix="${prefix}" \
+#         -v i="${index}" -v n="${max}" '
+#             BEGIN { if (leader == "") { found=1 } else { found=0 };}
+#             $0 ~ "^" prefix { 
+#                 if (found == 1) { 
+#                     print $i; 
+#                     max--; 
+#                     if (max == 0) { exit; }
+#                     found = 0;
+#                 }
+#             }
+#             $0 ~ "^" leader { found=1; }'`
+#     trace "get_values '$prefix' '$index' '$leader' '$max' yields '$values'"
+#     echo "${values}"
+# }
+
+
+function create_tag {
+    local key="$1"
+    local value="$2"
+    local tag='{"Key":"'"${key}"'","Value":"'"${value}"'"}'
+    verbose_verbose "created tag [${tag}]"
+    echo -e "${tag}"
+}
+
+function get_instance_state {
+    local instance_id="$1"
+    "${AWS}" ec2 describe-instances --region="${AWS_REGION}" --output text \
+        --instance-ids ${instance_id} | get_value 'STATE' 3
+}
+
+function instance_has_status {
+    verbose_verbose "$FUNCNAME $*"
+    local instance_id="$1"
+    local checked_status="$2"
+    if [ "${instance_id}" == "" ]; then
+        exit_error "$FUNCNAME: No instance-name provided."
+    fi
+    if [ "${checked_status}" == "" ]; then
+        exit_error "${FUNCNAME[0]}: No 'status' argument (2) provided."
+    fi
+    status=`get_instance_state "${instance_id}"`
+    has_status=0
+    if [ "$status" == "${checked_status}" ]; then
+        has_status=1
+    fi
+    local message="(status[${instance_id}] == ${checked_status})? yields"
+    message="${message} $has_status (status[${iunstance_id}]=$status)"
+    verbose_verbose "${message}"
+        
+    return $has_status
+}
+
+function get_instance_status {
+    local instance_id="$1"
+    local status_type="$2"
+    local status=`"${AWS}" ec2 describe-instance-status --region="${AWS_REGION}" --output text \
+        --instance-ids "${instance_id}" | get_value 'DETAILS' 3 "${status_type}"`
+    verbose_verbose "Instance status for ${instance_id} is '${status}'"
+    echo "${status}"
+}
+
+function instance_is_reachable {
+    local instance_id="$1"
+    local instance_status=`get_instance_status "${instance_id}" "INSTANCESTATUS"`
+    local system_status=`get_instance_status "${instance_id}" "SYSTEMSTATUS"`
+    verbose_verbose "Status ${instance_id} yields ${instance_status}/${system_status}"
+    if [ "${system_status}" != "${AWS_INSTANCE_STATUS_PASSED}" ]; then
+        return 0
+    fi
+    if [ "${system_status}" != "${AWS_INSTANCE_STATUS_PASSED}" ]; then
+        return 0
+    fi
+    return 1
+}
+
+
+function wait_for_instance {
+    verbose_verbose $FUNCNAME $*
+    local instance_id="$1"
+    local running_wait=${running_wait:-30}
+    local running_maxwait=${running_maxwait:-20}
+    local i=0
+    verbose_verbose "{$0: wait:$running_wait; maxwait: $running_maxwait}"
+    status_message="Wait for EC2 instance '${instance_id}' to become available"
+    start_progress "${status_message}"
+    while [ $i -lt ${running_maxwait} ];  do
+        instance_has_status "${instance_id}" "${AWS_INSTANCE_STATE_RUNNING}"
+        if [ "$?" == 1 ];  then
+            instance_is_reachable "${instance_id}"
+            if [ "$?" == 1 ];  then
+                end_progress "ready"
+                return 0
+            else
+                show_progress "${instance_id} is not reachable yet; "\
+                    "sleep for ${running_wait} seconds ..."
+            fi
+        else 
+            show_progress "${instance_id} is not running yet; "\
+                "sleep for ${running_wait} seconds ..."
+        fi
+        sleep ${running_wait}
+        i=$(( i + 1 ))
+    done
+    end_progress "timed-out" "Wait for ${instance_id} timed-out; Discontinue wait."
+    return 1
+}
+
+function wait_for_instances {
+    local instance_id=''
+    verbose_verbose $FUNCNAME $*
+    verbose "Wait for instances $*"
+    while [ "$1" != "" ];  do
+        instance_id="$1"
+        wait_for_instance "${instance_id}"
+        #if [ "$?" == 0 ]; then
+        #    waitForHealthCheck "${instance_id}"
+        #fi 
+        shift 
+    done
+}
+
+function get_elb_domainname {
+    local project="$1"
+    local environment="$2"
+    local tier="$3"
+    local name="${project}-${environment}-${tier}"
+    ${AWS} elb describe-load-balancers --region "${AWS_REGION}" --output text |\
+        grep "${name}" | get_value "LOADBALANCERDESCRIPTIONS" 2
+}
+
+function wait_for_elb {
+    local project="$1"
+    local environment="$2"
+    local tier="$3"
+    local iterations=$4
+    local sleep=$5
+    local elb_domain_name=`get_elb_domainname "${project}" ${environment} "${tier}"`
+    local url_to_check="http://${elb_domain_name}/__health_check__.php"
+    local http_status=404
+    local i=0
+
+    if [ "$iterations" == "" ] || [ $iterations -lt 5 ]; then
+        iterations=20
+    fi
+    if [ "$sleep" == "" ] || [ $sleep -lt 5 ] || [ $sleep -gt 60 ]; then
+        sleep=30
+    fi
+
+    status_message="Wait for ${environment} ${tier} ELB to become available "
+    start_progress "${status_message}"
+    verbose "waiting $iterations * $sleep seconds for '$url_to_check'"
+    while [ $i -lt ${iterations} ];  do
+        http_status=`curl -s -w "%{http_code}" -o /dev/null "${url_to_check}"`
+        if [ "$http_status" == "200" ];  then
+            end_progress "ready" "${environment} ${tier} ELB is available"
+            return 0
+        fi
+        show_progress "${tier} ELB is not availble yet; sleep for ${sleep} seconds ..."
+        sleep ${sleep}
+        i=$(( i + 1 ))
+    done
+    end_progress "timed-out" "${status_message} timed-out."\
+        "${environment} ${tier} has status '${http_status}'"
+    return 1
+}
+
+
+
+
+function wait_for_resource {
+    local message="$1: "
+    local resource="$2"
+    local describe_command="$3"
+    local status_property="$4"
+    local await_status="${5:-available}"
+    local iterations="${6:-20}"    # default is 20 iterations
+    local sleep="${7:-15}"         # default is 15 seconds
+    local error_file=`mktemp`
+
+    if [ "${await_status}" == "" ]; then
+        await_status="available"
+    fi
+    if [ $iterations -lt 5 ]; then
+        iterations=20
+    fi
+    if [ $sleep -lt 5 ] || [ $sleep -gt 60 ]; then
+        sleep=15
+    fi
+    status_message="${message}Waiting for ${resource} to become ${await_status}"
+    trace "describe_command='${describe_command}'; status_property='${status_property}';"
+    start_progress "${status_message}"
+    for i in $(seq 1 $iterations);  do  
+        sleep $sleep
+        info=`$describe_command 2> $error_file`
+        if [ -f $error_file ]; then
+            local n=`wc --lines $error_file | awk '{print$1}'`
+            if [ $n -gt 0 ]; then
+                local errors=`cat $error_file`
+                verbose_verbose "${errors}"
+            fi
+            rm -f $error_file
+        fi
+        status=`get_aws_property "${status_property}" "${info}"`
+        show_progress "'${resource}' status is '${status}'" 
+        if [ "${status}" == "${await_status}" ]; then
+            break
+        fi
+    done
+    rm -f $error_file
+    if [ "${status}" != available ]; then
+        end_progress "timed-out" "${message}Timed-out. Discontinue wait."
+        exit_error "${message}Timed-out "${status_message}
+    else 
+        end_progress "ready" "${resource}' is ${await_status}"
+    fi
+}
+
+
+function get_rds_instance_id {
+    local project="$1"
+    local environment="$2"
+    echo "${project}-${environment}-db" | awk '{print tolower($1);}'
+}
+
+function get_rds_instance_info {
+    local db_name="$1"
+    local db_label="$2"
+    trace "get_rds_instance_info ${db_name} ${db_label}"
+    if [ "${db_label}" != "" ]; then
+        db_name="${db_name}-${db_label}"
+    fi
+    db_name=`echo "${db_name}" | awk '{print tolower($1);}'`
+    local db_instances=`"${AWS}" rds describe-db-instances --region "${AWS_REGION}" --output text`
+    trace "instances=[\n${db_instances}\n]"
+    local db_identifier=`echo "${db_instances}" | get_value "DBINSTANCES.+${db_name}" 8`
+    local db_endpoint=`echo "${db_instances}" | get_value "ENDPOINT" 2 "DBINSTANCES.+${db_name}"`
+    local db_port=`echo "${db_instances}" | get_value "ENDPOINT" 3 "DBINSTANCES.+${db_name}"`
+    local info=`echo -e "${db_identifier}\t${db_endpoint}\t${db_port}"`
+    trace "${db_name}=[${info}]"
+    echo "${info}"
+}
+
+function rds_delete_instance {
+    local db_id="$1"
+    "${AWS}" rds delete-db-instance --region "${AWS_REGION}" --db-instance-identifier "${db_id}" \
+        --skip-final-snapshot
+}
+
+function wait_for_rds_instance {
+    local message="$1"
+    local db_id="$2"
+    local iterations=${3:-40}
+    local duration=${4:-15}
+    local await_status="available"
+    local describe_command="${AWS} rds describe-db-instances --region ${AWS_REGION} \
+        --db-instance-identifier ${db_id}" 
+
+    if [ "${db_id}" == "" ]; then
+        exit_error "Cannot wait for database, because no db_id given."
+    fi
+    if [ $iterations -lt 5 ]; then
+        iterations=40
+    fi
+    if [ $duration -lt 5 ] || [ $duration -gt 60 ]; then
+        duration=15
+    fi
+
+    wait_for_resource "${message}" "database '${db_id}'" "${describe_command}" \
+        "DBInstanceStatus" "${await_status}" $iterations $duration
+}
+
+function wait_for_rds_snapshot {
+    local message="$1"
+    local snapshot_id="$2"
+    local iterations=${3:-40}
+    local duration=${4:-15}
+    local await_status="available"
+    local describe_command="${AWS} rds describe-db-snapshots --region ${AWS_REGION} \
+        --db-snapshot-identifier ${snapshot_id}" 
+
+    if [ "${snapshot_id}" == "" ]; then
+        exit_error "Cannot wait for snapshot, because no snapshot_id given."
+    fi
+    if [ $iterations -lt 5 ]; then
+        iterations=40
+    fi
+    if [ $duration -lt 5 ] || [ $duration -gt 60 ]; then
+        duration=15
+    fi
+
+    wait_for_resource "${message}" "'${db_id}' snapshot '${snapshot_id}'" "${describe_command}" \
+        "Status" "${await_status}" $iterations $duration
+}
+

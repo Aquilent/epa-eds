@@ -1,0 +1,35 @@
+
+<%
+    # template variables are referenced with a @-prefix
+    @prefix="#{@prefix}-{instance_id}"
+%>
+# -------------------------------------------------------------------
+# Logwatch configuration for server '<%="#{@prefix}"%>'
+#     AWS Log Group: <%="#{@log_group}"%>
+# -------------------------------------------------------------------
+
+[general]
+state_file= /var/awslogs/state/agent-state
+
+<%
+if @files.nil? then
+    Chef::Log.info("No custom files found to be added to logwatch") 
+else     
+    Chef::Log.info("Adding custom files #{@files} to logwatch")
+    @files.keys.each do |name|
+        file = @files[name]
+        Chef::Application.fatal!("aws_logs files '#{name}' is not a Hash", 1)  if !file.is_a?(Hash)
+        path = file['path']
+        Chef::Application.fatal!("aws_logs file '#{name} does not have a 'path'", 1) if path.nil?
+%>
+
+[<%=path%>]
+file = <%=path%>
+log_group_name = <%= @log_group %>
+log_stream_name = <%= @prefix %>/<%= name %>
+datetime_format = 
+<%
+    end
+end
+%>
+

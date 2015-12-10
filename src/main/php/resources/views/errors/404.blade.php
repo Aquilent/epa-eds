@@ -1,0 +1,1 @@
+@extends('layout')@section('content')  <h2>API Unavailable</h2>  <p>API Unavailable</p>@stop

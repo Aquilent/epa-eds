@@ -1,0 +1,51 @@
+<VirtualHost *:<%=node['apache']['listen_ports'][0].to_i%>>
+  ServerAdmin <%= node['apache']['contact'] %>
+
+  DocumentRoot <%= node['apache']['docroot_dir'] %>/
+  <Directory <%= node['apache']['docroot_dir'] %>/>
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride All
+    Order allow,deny
+    Allow from all
+    # --------------------------------------------------------------------------
+    # Specify an OPEN FDA API key to be used in quries against opn.fda.gov
+    # You can specif none, 1, or more (comma-separated)
+    # If no key is specified, no key is used
+    # If 1 is specified, this key is used for every query
+    # if 2 or more keys are specified, the application will randomly pick
+    # one of the keys for each query
+    # When an API key is not used, the application is limited to 40 requests 
+    # per minute (per IP Address) and 1000 requests per day (per IP Address). 
+    # When an API key is used, the application is limited to 240 requests per 
+    # minute (per IP Address) and 120000 requests per day (per IP Address).
+    #
+    # SetEnv OPENFDA_API_KEY=[API_KEY1],[API_KEY2]
+    # --------------------------------------------------------------------------
+    RewriteEngine on
+    RewriteBase /
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/__health__(.*)$
+    RewriteRule ^ index.php [L]
+  </Directory>
+
+  #RewriteLog "/etc/httpd/logs/rewrite.log"
+  #RewriteLogLevel 3
+
+  LogFormat "%{X-Forwarded-For}i %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+  CustomLog /var/log/httpd/access.log proxy
+
+  <% if %w[rhel fedora].include?(node['platform_family']) -%>
+  #
+  # This configuration file enables the default "Welcome"
+  # page if there is no default index page present for
+  # the root URL.
+  #
+  <LocationMatch "^/+$">
+    Options -Indexes
+    ErrorDocument 403 /error/noindex.html
+  </LocationMatch>
+  <% end -%>
+
+</VirtualHost>
+

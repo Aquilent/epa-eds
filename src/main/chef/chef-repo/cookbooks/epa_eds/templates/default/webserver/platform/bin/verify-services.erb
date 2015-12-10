@@ -1,0 +1,10 @@
+#!/bin/bash
+
+url="http://localhost/"
+http_code=`curl -s -o /dev/null -w "%{http_code}" "${url}"`
+
+if [ "${http_code}" != "200" ]; then
+    exit_error "Service deployment failed. '${url}' http-code=[${http_code}]"
+else
+    echo "Web site successfully deployed"
+fi

@@ -1,0 +1,53 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require '../Common.rb'
+
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # All Vagrant configuration is done here. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  include Common
+
+  APP_IP = isEmpty(ENV['APP_IP']) ? '192.168.11.12' : ENV['APP_IP']
+
+  config.vm.boot_timeout = 600;
+
+  config.vm.define "app" do |app|
+    # Every Vagrant virtual environment requires a box to build off of.
+    app.vm.box = DEFAULT_VAGRANT_BOX
+
+    # Create a private network that allows host-only access to the machine using a specific IP.
+    puts "----- Server IP set to #{APP_IP} "
+    app.vm.network "private_network", :ip => APP_IP
+
+    puts "----- Mount #{CHEF_SOURCE_PATH} to #{PROJECT_CHEF_HOME}"
+    puts ""
+    puts "WARNING: Changes made to files in '#{PROJECT_CHEF_HOME}' in the guest VM are reflected in the host system."
+    puts ""
+    app.vm.synced_folder "#{SOURCE_PATH}/chef", PROJECT_CHEF_HOME, 
+        create: true, owner: "root", group: "root"
+    
+    puts "----- Mount #{SOURCE_PATH}/php to '#{APPLICATION_HOME}' "
+    puts ""
+    puts "WARNING: Changes made to files in '#{APPLICATION_HOME}' in the guest VM are reflected in the host system."
+    puts ""
+    app.vm.synced_folder "#{SOURCE_PATH}/php", "#{APPLICATION_HOME}",
+        create: true, owner: "root", group: "root"
+
+    app.vm.provision "shell" do | s |
+        s.path = "#{CHEF_SOURCE_PATH}/bin/run-chef.sh"
+        s.args = ["/vagrant/default.json", "--yum-suppress", "--log-stdout"]
+    end
+
+    app.vm.provision "shell" do | s |
+        s.inline = "/opt/epa-eds/bin/install-php-composer"
+    end
+  
+  end
+
+end

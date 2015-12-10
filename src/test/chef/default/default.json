@@ -1,0 +1,20 @@
+{
+   "epa_eds": {
+      "project_name": "DEFAULT-TEST",
+      "environment": "int",
+      "aws_region": "us-east1", // Normally a placeholder
+      "iptables": {
+          "rules": {
+              "webserver": "platform/iptables/webserver"
+          }
+      },
+      "webserver": {
+        "use_varnish": false
+      }
+   },
+   "run_list": [
+      "recipe[epa_eds::platform]",
+      "recipe[epa_eds::webserver]"
+   ]
+}
+

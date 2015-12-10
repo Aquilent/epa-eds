@@ -1,0 +1,19 @@
+#!/bin/sh
+
+SELENIUM_JAR="http://selenium-release.storage.googleapis.com/2.46/selenium-server-standalone-2.46.0.jar"
+
+selenium_home="/opt/selenium/"
+
+mkdir -p "${selenium_home}"
+echo "================     Getting Selenium        ================"
+curl -l #{SELENIUM_JAR} -o "${selenium_home}/selenium-server-standalone.jar"
+
+echo "================      Installing pip         ================"
+yum install -y python-pip
+
+echo "================       Installing pip        ================"
+pip install selenium
+pip install unittest-xml-reporting
+
+ln -s /opt/phantomjs/bin/phantomjs /usr/bin/phantomjs
+

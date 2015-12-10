@@ -1,0 +1,159 @@
+# This is a basic VCL configuration file for varnish.  See the vcl(7)
+# man page for details on VCL syntax and semantics.
+
+# Define the internal network subnet.
+# These are used below to allow internal access to certain files while not
+# allowing access from the public internet.
+#acl internal {
+#  "192.10.0.0"/24;
+#}
+
+# Default backend definition.  Set this to point to your content server.
+# Extended the timeouts to 600 seconds, it (probably) is better to have 
+# an individual user occasionally get an element that loads slowly or 
+# times out than many users across the site seeing an uninformative 503 
+# error code
+backend default {
+    .host = "127.0.0.1";
+    .port = "8080";
+    .connect_timeout = 600s;
+    .first_byte_timeout = 600s;
+    .between_bytes_timeout = 600s;
+}
+
+# Respond to incoming requests.
+sub vcl_recv {
+
+  if (req.url ~ "^/__health_check__$") {
+    error 702 "OK";
+    return (error);
+  }
+
+  if (req.restarts == 0) {
+    if (req.http.x-forwarded-for) {
+      set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
+    } else {
+      set req.http.X-Forwarded-For = client.ip;
+    }
+  }
+
+  if (req.request != "GET" &&
+      req.request != "HEAD" &&
+      req.request != "PUT" &&
+      req.request != "POST" &&
+      req.request != "TRACE" &&
+      req.request != "OPTIONS" &&
+      req.request != "DELETE")
+  {
+    # Non-RFC2616 or CONNECT, which is weird
+    return (pipe);
+  }
+
+  # We deal only with GET and HEAD by default
+  if (req.request != "GET" && req.request != "HEAD") {
+    return (pass);
+  }
+
+  # Allow the backend to serve up stale content if it is responding slowly.
+  ##(Wade's notes: This allows for Varnish to cache even if Apache goes down.
+  ## Since we're using ELB, I'm not sure if we need this.)
+  #  set req.grace = 6h;
+
+  # Explicitly, do not cache these paths.
+  if (req.url ~ "^/status\.php$" ||
+      req.url ~ "^/update\.php$" ||
+      req.url ~ "^/admin$" ||
+      req.url ~ "^/admin/.*$" ||
+      req.url ~ "^/flag/.*$" ||
+      req.url ~ "^.*/ajax/.*$" ||
+      req.url ~ "^.*/ahah/.*$") {
+        return (pass);
+  }
+
+  # Always cache the following file types for all users. This list of extensions
+  # appears twice, once here and again in vcl_fetch so make sure you edit both
+  # and keep them equal.
+  if (req.url ~ "(?i)\.(pdf|asc|dat|txt|doc|xls|ppt|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js|flv|mp3|mp4|webm|mov)(\?.*)?$") {
+    # Remove cookie to make these file types cacheable
+    unset req.http.Cookie;
+    # Instruct Varnish to ignore the query parameters and only cache one instance of an object
+    # This should not be done (or done differently), because it causes account-based files 
+    # to not work, probably should check if itok is in parameters, if so, do not cache.
+    #set req.url = regsub(req.url, "\?.*$", "");
+  }
+
+  if (req.http.Authorization) { #|| req.http.Cookie) {
+    # Not cacheable by default
+    return (pass);
+  }
+
+  return (lookup);
+}
+
+# Set a header to track a cache HIT/MISS.
+sub vcl_deliver {
+  if ("<%= node['epa_eds']['varnish']['server_id'] %>" != "") {
+    # When using a load-balancer, set a variable here so you can check
+    # the headers to see which frontend served the request.
+    set resp.http.X-Server = "<%= node['epa_eds']['varnish']['server_id'] %>";
+  }
+
+  if (obj.hits > 0) {
+    set resp.http.X-Varnish-Cache = "HIT";
+  }
+  else {
+    set resp.http.X-Varnish-Cache = "MISS";
+  }
+}
+
+# Code determining what to do when serving items from the Apache servers.
+# beresp == Back-end response from the web server.
+sub vcl_fetch {
+  if (beresp.ttl <= 0s ||
+      beresp.http.Set-Cookie ||
+      beresp.http.Vary == "*")
+  {
+    # Mark as "Hit-For-Pass" for the next 2 minutes
+    set beresp.ttl = 120 s;
+    return (hit_for_pass);
+  }
+
+  # Don't allow static files to set cookies.
+  # (?i) denotes case insensitive in PCRE (perl compatible regular expressions).
+  # This list of extensions appears twice, once here and again in vcl_recv so
+  # make sure you edit both and keep them equal.
+  if (req.url ~ "(?i)\.(pdf|asc|dat|txt|doc|xls|ppt|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js|flv|mp3|mp4|webm|mov)(\?.*)?$") {
+    set beresp.ttl = 365d;
+    unset beresp.http.set-cookie;
+  }
+
+  # Allow items to be stale if needed.
+  ##(Wade's notes: This allows for Varnish to cache even if Apache goes down.
+  ## Since we're using ELB, I'm not sure if we need this.)
+#  set beresp.grace = 6h;
+
+  return (deliver);
+}
+
+# In the event of an error, show friendlier messages.
+sub vcl_error {
+
+  # Request was for the health check.
+  if(obj.status == 702) {
+    set obj.status = 200;
+    set obj.http.Content-Type = "text/html; charset=utf-8";
+    synthetic {"
+<!doctype html>
+<html>
+  <head>
+    <title>Health Check: Server is up</title>
+  </head>
+  <body>
+    <h1>Server <%= node['epa_eds']['varnish']['server_id'] %> is up</h1>
+  </body>
+</html>
+"};
+  }
+
+  return (deliver);
+}

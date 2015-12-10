@@ -1,0 +1,31 @@
+REM ------------------------------------------------------------
+REM    Copy this file to setenv.cmd and properly set variables
+REM ------------------------------------------------------------
+@echo off
+
+if "%PROJECT_HOME%" == "" ( set PROJECT_HOME=/path/to/project/root )
+
+if "%GIT_HOME%" == "" ( set GIT_HOME=/path/to/git )
+if "%AWS_HOME%" == "" ( set AWS_HOME=/path/to/AWSCLI )
+
+REM ----------------------------------------------------------------
+REM Comment out the following line, if you are using an environment that does not allow 64-bit 
+REM Virtualization, such as AWS Workspaces.
+REM This could manifest itself, as the Vagrant box never becoming accessible
+REM if "%DEFAULT_VAGRANT_BOX%" == "" (set DEFAULT_VAGRANT_BOX=chef/centos-6.6-i386 )
+
+REM ----------------------------------------------------------------
+REM Change the name of the branch from 'master' to 'your-branch-name' 
+REM when using a branch, rather than master
+REM Tags should checked-out to the branches directory as well, e.g. branches/your-tag-name,
+REM such that all script will work 
+if "%1" == "" (set BRANCH_NAME=master) else (set BRANCH_NAME=%1)
+
+REM -----------------------------------------------------------------------------------------------
+REM The following section should (typically) not be changed
+REM -----------------------------------------------------------------------------------------------
+
+set BRANCH_HOME=%PROJECT_HOME%/branches/%BRANCH_NAME%
+
+
+

@@ -1,0 +1,107 @@
+#!/bin/sh
+
+SCRIPT_NAME='synchronize'
+
+export PLATFORM_HOME="/opt/epa-eds"
+. "${PLATFORM_HOME}/bin/functions"
+
+TOUCH=
+SERVER_TYPE=
+SYNC_DIR=
+CLEAN_UP="${TRUE_VALUE}"
+RESTART="${TRUE_VALUE}"
+DOCKER_CONTAINER_ID=
+
+APPLICATION_HOME="/var/www/epa-eds"
+
+RSYNC_OPTIONS="--recursive --update --delete --exclude .git/ --exclude vendor/"
+
+function get_parameters {
+    while test $# -gt 0; do
+      case $1 in
+        -d|--sync-dir)          shift; SYNC_DIR="$1" ;;
+        -n|--no-cleanup)        CLEAN_UP="${FALSE_VALUE}" ;;
+        -q|--quiet)             set_quiet ;;
+        -r|--no-restart)        RESTART="${FALSE_VALUE}" ;;
+        -s|--server-type)       shift; SERVER_TYPE="$1" ;;
+        -t|--touch)             TOUCH="${TRUE_VALUE}" ;;
+        -v|--verbose)           set_verbose ;;
+      esac
+      shift
+    done
+}
+
+function initialize {
+    get_parameters "$@"
+    if [ -f /usr/bin/docker ]; then
+        DOCKER_CONTAINER_ID=`docker ps -q`
+        writeln "Docker container ID= [${DOCKER_CONTAINER_ID}]"
+        APPLICATION_HOME=`docker inspect "${DOCKER_CONTAINER_ID}" | \
+            grep "\"/var/www/epa-eds\": \"/var/lib/docker/vfs/dir" | \
+            cut -d ':' -f 2 | sed -e "s/[\" ]//g"`
+        if [ ! -d "${APPLICATION_HOME}" ]; then
+            exit_error "APPLICATION_HOME '${APPLICATION_HOME}' not found"
+        fi
+        writeln "Application volume in [${APPLICATION_HOME}]"
+    fi
+}
+
+function stop_application {
+    if [ "${RESTART}" == "${TRUE_VALUE}" ]; then
+        if [ "${DOCKER_CONTAINER_ID}" != "" ]; then
+            writeln "Stopping docker image ${DOCKER_CONTAINER_ID}"
+            docker stop "${DOCKER_CONTAINER_ID}"
+        else
+            "${PLATFORM_HOME}/bin/stop-services"
+        fi
+    fi
+}
+
+function start_application {
+    if [ "${RESTART}" == "${TRUE_VALUE}" ]; then
+        if [ "${DOCKER_CONTAINER_ID}" != "" ]; then
+            writeln "Starting docker image ${DOCKER_CONTAINER_ID}"
+            docker start "${DOCKER_CONTAINER_ID}"
+        else
+            "${PLATFORM_HOME}/bin/start-services"
+            "${PLATFORM_HOME}/bin/verify-services"
+        fi
+    fi
+}
+
+function synchronize_webserver {
+    local excludes=(--exclude secret)
+    local options="${RSYNC_OPTIONS} ${excludes[@]}"
+
+    stop_application
+    verbose "Synchronize web server"
+    if [ "${TOUCH}" != "" ]; then
+        verbose 'Touch remote files to ensure proper sync'
+        find ${APPLICATION_HOME}/ -exec touch {} \;
+    fi
+    verbose "Synchronize application files"
+    verbose rsync ${options} ${VERBOSE} ${SYNC_DIR}/php/ "${APPLICATION_HOME}"
+    rsync ${options} ${VERBOSE} ${SYNC_DIR}/php/ "${APPLICATION_HOME}"
+
+    if [ "${DOCKER_CONTAINER_ID}" == "" ]; then
+        "${PLATFORM_HOME}/bin/install-php-composer"
+        "${PLATFORM_HOME}/bin/set-permissions"
+    fi
+
+    start_application
+}
+
+function clean_up {
+    if [ "${CLEAN_UP}" == "${TRUE_VALUE}" ];  then
+        rm -rf "${SYNC_DIR}"
+    fi
+}
+
+initialize "$@"
+if [ "$?" != "0" ];  then
+    exit 1
+fi
+case "${SERVER_TYPE}" in
+    web)  synchronize_webserver ;;
+esac
+clean_up

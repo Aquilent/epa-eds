@@ -1,0 +1,4 @@
+/Gemfile.lock
+/tests/gemfiles/*.lock
+.kitchen/
+.kitchen.local.yml

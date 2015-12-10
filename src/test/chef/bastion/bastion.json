@@ -1,0 +1,41 @@
+{
+    "jenkins": { 
+        "master" : {
+            "endpoint": "http://192.168.10.2/"
+        },
+        "executor" : {
+          "timeout": 300
+        }
+    },
+   "epa_eds": {
+      "project_name": "DEFAULT-TEST",
+      "environment": "int",
+      "aws_region": "us-east1", // Normally a placeholder
+      "git_owner": "Aquilent",
+      "git_repo": "drug-adverse-event-browser",
+      "s3_bucket_name": "dummy.epa.eds.gov",
+      "aws_logwatch": {
+          "install": true,
+          "log_group": "DUMMY_LOGGROUP_NAME", // Normally a placeholder
+          "files": {  // files to watch in addition to default files
+             "httpd-error": {"path": "/var/log/httpd/error.log"},
+             "httpd-access": {"path": "/var/log/httpd/access.log"}
+          }
+      },
+      "iptables": {
+          "rules": {
+              "webserver": "platform/iptables/webserver"
+          }
+      },
+      "bastion": {
+          "int_web_hostname": "192.168.10.3",
+          "devops_user": "vagrant"
+      }
+   },
+   "run_list": [
+      "recipe[epa_eds::platform]",
+      //"recipe[epa_eds::aws_logwatch]",
+      "recipe[epa_eds::bastion]"
+   ]
+}
+

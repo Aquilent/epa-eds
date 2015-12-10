@@ -1,0 +1,48 @@
+#!/bin/sh
+
+. /opt/epa-eds/bin/functions
+
+application_home="${1}"
+apache_user_group="${2}"
+
+if [ "${application_home}" == "" ]; then
+    application_home="<%= "#{node['epa_eds']['webserver']['application_home']}" %>"
+fi
+if [ "${apache_user_group}" == "" ]; then
+   apache_user_group="<%= "#{node['apache']['user']}" %>:<%= "#{node['apache']['group']}" %>"
+fi
+
+verbose "Restore ${application_home} ownership"
+chown -R "${apache_user_group}" "${application_home}"
+
+verbose "Restore directory permissions"
+find "${application_home}" -type d -exec chmod u=rwx,g=rx,o= '{}' \;
+
+verbose "Restore files permissions"
+find "${application_home}" -type f -exec chmod u=rw,g=r,o= '{}' \;
+
+chmod 700 "${application_home}/storage/logs"
+#chmod 700 "${application_home}/storage/views"
+
+enabled=
+if [ -f /usr/sbin/sestatus ] || [-f /usr/bin/sestatus ]; then
+     enabled=`sestatus | awk  -F ":" ' /SELinux status:/ { gsub(" |\t","",$2); print $2 }'`
+     if [ "$enabled" == "" ];  then
+         verbose "INFO: SELinux enabled. Disabling"
+         sesetenforce 0
+#     else 
+         verbose "INFO: SELinux not enabled. Keep disabled"
+#         verbose "INFO: SELinux not enabled. Enabling"
+#         sesetenforce 1
+     fi
+#        verbose "Setting file ${application_home} SELinux access rules"
+#        semanage fcontext -a -t httpd_sys_content_t "${application_home}(/.*)?"
+#         semanage fcontext -a -t httpd_sys_rw_content_t "${application_home}/storage(/.*)?"
+
+#        verbose "Restoring SELinux settings"
+#        restorecon -R "${application_home}"
+
+#     fi
+# else 
+#     verbose "WARNING: SELinux NOT installed"
+fi  

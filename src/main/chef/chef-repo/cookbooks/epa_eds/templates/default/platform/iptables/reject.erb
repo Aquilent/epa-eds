@@ -1,0 +1,26 @@
+
+# Uncomment rules Between LOGGING_START and LOGGING_END to log the remainder
+# of the incoming messages with a maximum of 15 log entries per minute
+# ---- LOGGING_START
+# -N LOG
+# -A INPUT -j LOG
+# -A OUTPUT -j LOG
+# -A INPUT -j LOG -m limit --limit 15/minute --log-level 7 --log-prefix "Rejected by firewall: "
+# -A OUTPUT -j LOG -m limit --limit 15/minute --log-level 7 --log-prefix "Rejected by firewall: "
+# -A LOG -j REJECT
+# ----- LOGGING_END
+
+
+# See http://www.chiark.greenend.org.uk/~peterb/network/drop-vs-reject
+# Note: REJECT does not work on policies, just on rules, hence DROP instead of REJECT
+
+
+# Reject all other inbound traffic
+-A INPUT -j REJECT
+
+# Accept all (other) output traffic
+-P OUTPUT ACCEPT
+
+# Drop all forwards
+-P FORWARD DROP
+

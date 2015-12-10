@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# echo "Installing PHP composer"
+# application_home="<%= node['epa_eds']['webserver']['application_home'] %>"
+# log=`mktemp`
+
+# curl -sS https://getcomposer.org/installer | php -- --install-dir="/tmp" &>> $log
+# pushd "${application_home}"
+# php "/tmp/composer.phar" install &> $log
+# popd
+# rm -f "/tmp/composer.phar"
+
+# echo "Done"
+
+echo "Composer no longer installed every time, but part of repo code"

@@ -1,0 +1,47 @@
+#!/bin/sh
+
+if [ "$EUID" -ne 0 ]
+  then echo "Please run as root"
+  exit
+fi
+
+export PLATFORM_HOME="/opt/epa-eds"
+
+. "${PLATFORM_HOME}/bin/functions"
+
+CONFIG_FILE="${PLATFORM_HOME}/conf/manage.conf"
+
+DEVOPS_USER=`get_property "DEVOPS_USER"`
+certificates_home="/home/${DEVOPS_USER}/.ssh"
+
+if [ ! -d "/home/${DEVOPS_USER}/.ssh" ]; then
+    echo "Oops. 'DEVOPS_USER' not set in '${CONFIG_FILE}'"
+    exit 1
+fi
+
+
+if [ -d "${certificates_home}" ] && [ "$1" != "--force" ]; then
+    echo "Already setup"
+else
+    pushd "${certificates_home}"
+    mkdir -p "/home/jenkins/.ssh"
+    chown "jenkins:jenkins" /home/jenkins/
+    chmod 700 /home/jenkins/
+    chown "jenkins:jenkins" "/home/jenkins/.ssh"
+    chmod 700 "/home/jenkins/.ssh"
+    echo "Copying certificates from [${certificates_home}} to /[home/jenkins/.ssh]"
+    cd "${certificates_home}"
+    ls -l ./*.pem
+    cp -f ./*.pem "/home/jenkins/.ssh/"
+    cd "/home/jenkins/.ssh"
+    ls -l *.pem
+    chown "jenkins:jenkins" *.pem
+    chmod 400 *.pem
+    
+    echo "Verifying hosts for user 'jenkins"
+    sudo -u jenkins /opt/epa-eds/bin/setup-jenkins-credentials
+
+    echo "Setup complete"
+    popd
+fi
+

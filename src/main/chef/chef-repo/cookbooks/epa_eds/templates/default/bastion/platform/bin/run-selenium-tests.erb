@@ -1,0 +1,150 @@
+#!/bin/bash
+
+PLATFORM_HOME=/opt/epa-eds
+. "${PLATFORM_HOME}/bin/functions"
+
+CONFIG_FILE="${PLATFORM_HOME}/conf/manage.conf"
+TEST_SCRIPT_PATH="src/test/selenium/test-scripts"
+CLEANUP="${TRUE_VALUE}"
+
+function get_parameters {
+    while test $# -gt 0; do
+        case $1 in
+          --branch*|-b*)        BRANCH=`get_parameter "(-b|--branch)" "$1"` ;;
+          --no-cleanup)         CLEANUP="${FALSE_VALUE}" ;;
+          --config-file*|-c*)   CONFIG_FILE=`get_parameter "(-c|--config-file)" "$1"` ;;
+          --environment*|-e*)   ENVIRONMENT=`get_parameter "(-e|--environment)" "$1"` ;;
+          --quiet|-q)           set__quiet ;;
+          --verbose|-v)         set_verbose ;;
+          --workspace*|-w*)     WORKSPACE=`get_parameter "(--workspace|-w)" "$1"` ;;
+          *)                    exit_error "Unknown argument '$1'" ;;
+        esac
+        shift
+    done
+}
+
+function get_properties {
+    local current_user=`whoami`
+
+    if [ "${CONFIG_FILE}" == "" ];  then
+      exit_error "No configuration file specified."
+    fi  
+    if [ "${ENVIRONMENT}" == "" ];  then
+      exit_error "No environment specified."
+    fi  
+    case $ENVIRONMENT in
+        int|test|prod)    ;;
+        *)                exit_error "Unknown environment '${ENVIRONMENT}'." ;;
+    esac
+    local ENV=`echo "${ENVIRONMENT}" | awk '{print toupper($1);}'`
+
+    URL=`get_property "${ENV}_URL"`
+    if [ "${URL}" == "" ];  then
+       exit_error "No URL specified for environment '${ENV}'."
+    fi  
+
+    GIT_OWNER=`get_property "GIT_OWNER"`
+    GIT_REPO=`get_property "GIT_REPO"`
+    GIT_CERT=`get_property "GIT_CERT"`
+    GIT_USER=`get_property "GIT_USER" "${current_user}"`
+    if [ "${BRANCH_NAME}" == "" ]; then
+        BRANCH_NAME=`get_property "${ENV}_BRANCH_NAME" "master"`
+    fi
+    SOURCE_DIR="/tmp/epa-eds/selenium/${BRANCH_NAME}"
+
+    TEST_REPORTS_DIR="${WORKSPACE}/test-reports"
+}
+
+function initialize {
+    get_parameters "$@"
+    get_properties
+}
+
+function setup_ssh_agent {
+    eval `ssh-agent -s`> /dev/null
+}
+
+function kill_ssh_agent {
+    if [ ${SSH_AGENT_PID+1} == 1 ]; then
+       ssh-add -D
+       ssh-agent -k > /dev/null 2>&1
+       unset SSH_AGENT_PID
+       unset SSH_AUTH_SOCK
+    fi
+}
+
+function get_test_scripts {
+    writeln "Getting sources from '${GIT_OWNER}/${GIT_REPO}/${TEST_SCRIPT_PATH}'" \
+        "; using branch '${BRANCH_NAME}'"
+    verbose_verbose "Cloning into directory ${SOURCE_DIR} and using '${GIT_CERT}'"
+ 
+    if [ -d "${SOURCE_DIR}" ]; then
+        writeln "Cleanup "${SOURCE_DIR}" directory"
+        rm -rf "${SOURCE_DIR}"
+    fi
+    setup_ssh_agent
+    ssh-add -t 30 "/home/${GIT_USER}/.ssh/${GIT_CERT}"
+    git clone --branch "${BRANCH_NAME}" "ssh://git@github.com/${GIT_OWNER}/${GIT_REPO}.git" \
+        "${SOURCE_DIR}"
+    kill_ssh_agent
+}
+
+function prepare_test {
+    local file_name="$1"
+    # The patterns are used to:
+    #     2. Ensure the PhantomJS web driver is used (need to be headless)
+    local use_phantomjs="s|self.driver = webdriver.*()|self.driver = webdriver.PhantomJS()|g"
+    #     3. Use the proper environment URL
+    local replace_url_with_environment_url="s|self.base_url = \".*\"|self.base_url = \"${URL}\"|" 
+    #     4. The xmlrunner class is imported (for XML-based JUNIT report)
+    local import_xmlrunner="s|class |\nimport xmlrunner\n\nclass |"
+    #     5. Use the xmlrunner to generate XML-based JUNIT report (for Jenkins)
+    local test_runner="testRunner=xmlrunner.XMLTestRunner(output=\"${TEST_REPORTS_DIR}\""
+    local generate_junit_output="s|unittest.main(|unittest.main(${test_runner})|"
+    verbose_verbose "Preparing test '${file_name}' in-place"
+    sed -i "${file_name}" \
+        -e "${use_phantomjs}" \
+        -e "${replace_url_with_environment_url}" \
+        -e "${import_xmlrunner}" \
+        -e "${generate_junit_output}" 
+}
+
+function run_tests {
+    local script_names=""
+    local source_dir="${SOURCE_DIR}/${TEST_SCRIPT_PATH}"
+
+    get_test_scripts
+
+    verbose_verbose "Changing to directory '${source_dir}'"
+    pushd "${source_dir}"
+    verbose_verbose "Checking for *.py"
+    test_script_names=`ls *.py`
+
+    writeln "Storing test reports in '${TEST_REPORTS_DIR}'"
+    if [ ! -d "${TEST_REPORTS_DIR}" ]; then
+        writeln "Creating '${TEST_REPORTS_DIR}"'; Does not exist yet'
+        mkdir -p $TEST_REPORTS_DIR
+    fi
+
+    for test_script_name in $test_script_names; do
+        prepare_test "${test_script_name}" 
+        writeln "Running '${test_script_name}' test script"
+        python "./${test_script_name}"
+    done
+
+    popd
+
+    if [ "${CLEANUP}" == "${TRUE_VALUE}" ]; then
+        writeln "Cleanup cloned directory"
+        rm -rf "${SOURCE_DIR}"
+    else 
+        rm -rf "${SOURCE_DIR}/doc"
+        rm -rf "${SOURCE_DIR}/src/main"
+        writeln "Keeping cloned directory"
+    fi
+
+}
+
+initialize "$@"
+writeln "Run tests for ${ENVIRONMENT} at ${URL}"
+run_tests

@@ -1,0 +1,13 @@
+<VirtualHost *:80>
+  ProxyPreserveHost On
+  ProxyRequests Off
+
+  ProxyPass / http://localhost:8080/
+  ProxyPassReverse / http://localhost:8080/
+
+  <Location /jenkins>
+    Order allow,deny
+    Allow from all
+  </Location>
+
+</VirtualHost>

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+<%if node['epa_eds']['varnish']['enabled']  then %>"
+service varnish stop
+<% end %>
+service httpd stop

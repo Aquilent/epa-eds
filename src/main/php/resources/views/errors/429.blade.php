@@ -1,0 +1,1 @@
+@extends('layout')@section('content')  <h2>API Limit Reached</h2>  <p>API Limit Reached text</p>@stop

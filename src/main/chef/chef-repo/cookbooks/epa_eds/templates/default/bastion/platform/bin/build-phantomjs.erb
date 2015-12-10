@@ -1,0 +1,36 @@
+#!/bin/sh
+
+DEV_PACKAGES="gcc gcc-c++ make openssl-devel flex bison gperf zlib-devel curl-devel"
+DEV_PACKAGES="$DEV_PACKAGES libjpeg-devel libpng-devel freetype-devel libX11-devel"
+DEV_PACKAGES="$DEV_PACKAGES  libXext-devel libicu-devel sqlite-devel fontconfig-devel"
+
+REM echo "================ Install Development Package ================"
+REM yum install -y $DEV_PACKAGES
+
+if [ -d /var/tmp/phantomjs ]; then
+   rm -rf /var/tmp/phantomjs
+fi
+mkdir -p /var/tmp/phantomjs
+echo "================    Getting PhantomJS code   ================"
+cd /var/tmp/phantomjs
+git clone https://github.com/ariya/phantomjs.git
+
+echo "================   Building PhantomJS code   ================"
+cd phantomjs
+git checkout 2.0
+./build.sh --confirm
+
+echo "================  Remove Development Package ================"
+yum erase -y $DEV_PACKAGES
+
+if [ !-f /var/mp/phantomjs/bin/phantomjs ]; then
+    echo "/var/mp/phantomjs/bin/phantomjs not found. Build failed!"
+    exit -1
+fi
+echo "================  Installing phantomjs ================"
+mkdir -p /opt/phantomjs/bin
+cp -f /var/temp/phantomjs/bin/phantomjs /opt/phantomjs/bin/
+ln -s /opt/phantomjs/bin/phantomjs /usr/bin/phantomjs
+
+echo "================  Cleanup phantomjs build directory================"
+rm -rf /var/temp/phantomjs/
