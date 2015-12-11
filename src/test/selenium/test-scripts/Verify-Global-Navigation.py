@@ -7,7 +7,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import NoAlertPresentException
 import unittest, time, re
 
-class S2VerifyGlobalNavigation(unittest.TestCase):
+class VerifyGlobalNavigation(unittest.TestCase):
     def setUp(self):
         self.driver = webdriver.Firefox()
         self.driver.implicitly_wait(30)
@@ -15,7 +15,7 @@ class S2VerifyGlobalNavigation(unittest.TestCase):
         self.verificationErrors = []
         self.accept_next_alert = True
     
-    def test_s2_verify_global_navigation(self):
+    def test_verify_global_navigation(self):
         driver = self.driver
         driver.get(self.base_url + "/")
         driver.find_element_by_link_text("Disclaimers").click()
