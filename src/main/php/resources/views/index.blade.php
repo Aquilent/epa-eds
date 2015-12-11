@@ -1,1 +1,5 @@
-@extends('layout')@section('content')<p>MAIN-PAGE-CONTENT</p>@stop
+@extends('layout')
+
+@section('content')
+<p>MAIN-PAGE-CONTENT</p>
+@stop
