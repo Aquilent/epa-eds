@@ -11,21 +11,20 @@ class VerifyGlobalNavigation(unittest.TestCase):
     def setUp(self):
         self.driver = webdriver.Firefox()
         self.driver.implicitly_wait(30)
-        self.base_url = "http://epa-eds-2-elbwebex-104nmt8jecxg3-500581402.us-east-1.elb.amazonaws.com/"
+        self.base_url = "http://epa-eds-2-elbwebex-104nmt8jecxg3-500581402.us-east-1.elb.amazonaws.com"
         self.verificationErrors = []
         self.accept_next_alert = True
     
     def test_verify_global_navigation(self):
         driver = self.driver
         driver.get(self.base_url + "/")
-        driver.find_element_by_link_text("Disclaimers").click()
-        driver.find_element_by_link_text("About the Tool").click()
-        driver.find_element_by_css_selector("div.links > a[title=\"Disclaimers\"]").click()
-        driver.find_element_by_css_selector("div.links > a[title=\"About the Tool\"]").click()
-        driver.find_element_by_css_selector("img[alt=\"Aquilent logo\"]").click()
-        driver.back()
-        driver.find_element_by_css_selector("a[title=\"Aquilent Web Site\"] > img[alt=\"Aquilent logo\"]").click()
-        driver.back()
+        # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
+        for i in range(60):
+            try:
+                if "About EcoShopper" == driver.find_element_by_css_selector("footer a strong").text: break
+            except: pass
+            time.sleep(1)
+        else: self.fail("time out")
     
     def is_element_present(self, how, what):
         try: self.driver.find_element(by=how, value=what)
