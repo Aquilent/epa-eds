@@ -11,7 +11,7 @@ class VerifyGlobalNavigation(unittest.TestCase):
     def setUp(self):
         self.driver = webdriver.Firefox()
         self.driver.implicitly_wait(30)
-        self.base_url = "http://epa-eds-2-elbwebex-104nmt8jecxg3-500581402.us-east-1.elb.amazonaws.com"
+        self.base_url = "http://epa-eds-2-elbwebex-104nmt8jecxg3-500581402.us-east-1.elb.amazonaws.com/"
         self.verificationErrors = []
         self.accept_next_alert = True
     
@@ -21,7 +21,7 @@ class VerifyGlobalNavigation(unittest.TestCase):
         # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
         for i in range(60):
             try:
-                if "About EcoShopper" == driver.find_element_by_css_selector("footer a strong").text: break
+                if "Select an ENERGY STAR appliance:" == driver.find_element_by_css_selector("label").text: break
             except: pass
             time.sleep(1)
         else: self.fail("time out")
