@@ -10,35 +10,22 @@
 | and give it the controller to call when that URI is requested.
 |
 */
-
-Route::get('instructions', function()
+Route::get('/', [ 'as' => 'index', function()
 {
-    return view('instructions');
-});
-
-Route::get('disclaimers', function()
-{
-    return view('disclaimers');
-});
-
-Route::get('interactions', function()
-{
-    return view('interactions');
-});
-
-Route::get('/', [ 'as' => 'home', function()
-{
-    return view('index');
+    return view('index', [
+        'category' => null
+    ]);
 }]);
 
-Route::post('/', 'ReactionController@getReactions');
+Route::get('results', [ 'as' => 'results', function()
+{
+    $category = Request::input('category');
+    $p = Request::has('p') ? Request::input('p') : 1;
+    $sort = Request::has('sort') ? Request::input('sort') : "SALESRANK";
+    $awsConnector = new App\AmazonConnector;
+    $allItems = $awsConnector->getItems($category);
+    $total = count($allItems);
+    $items = $allItems->sortByDesc($sort)->forPage($p, 10);
 
-Route::get('/{drugOne}/{drugTwo?}', [
-  'as'   => 'listReactions',
-  'uses' => 'ReactionController@listReactions'
-]);
-
-Route::get('/r/{reaction}/{drugOne}/{drugTwo?}', [
-  'as'   => 'listInteractions',
-  'uses' => 'ReactionController@listInteractions'
-]);
+    return view('results', compact('category', 'items', 'p', 'total'));
+}]);

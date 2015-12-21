@@ -24,10 +24,10 @@
     <!-- You write code for this content block in another file -->
      
 
-  <header class="header">
+	<header class="header">
   <section class="usa-grid">
     <div class="usa-width-one-half">
-        <a href="{{ route('results') }}"><img src="img/eco-shop-logo-2.png" alt=""></a>
+        <a href="index.html"><img src="img/eco-shop-logo-2.png" alt=""></a>
     </div>
     <div class="usa-width-one-half header-tag-line">
         <h4>Streamlining the ENERGY STAR shopping experience</h4>
@@ -35,9 +35,46 @@
   </section>
 </header>
 
-@yield('content')
+	          <div class="usa-grid usa-grid-example usa-grid-text">
+            <div class="usa-width-one-whole app-top">
+                    <form action="results.html" class="appliance-form">
+                      <label for="options">Select an ENERGY STAR appliance:</label>
+                      <select name="options" id="options" class="appliance-form" onchange="location = this.options[this.selectedIndex].value;">
+                        <option value="">Select</option>
+                        <option value="results.html">Clothes Dryers</option>
+                        <option value="results.html">Clothes Washers</option>
+                        <option value="results.html">Dishwashers</option>
+                        <option value="results.html">Freezers</option>
+                        <option value="results.html">Refrigerators</option>
+                      </select>
+                    </form>
+            </div>
+          </div>
 
-    <footer class="usa-footer usa-footer-big usa-sans" role="contentinfo">
+	           <div class="usa-grid">
+            <div class="usa-width-one-half home-top">
+              
+              <h3>Find the ENERGY STAR appliance that suits your needs:</h3>
+                <ul>
+                  <li>See top-selling products.</li> 
+
+                  <li>Read buyer reviews.</li> 
+
+                  <li>Compare energy efficiency.</li>                 
+                </ul>
+
+              <p>Your choice to buy ENERGY STAR labeled products makes a difference in the fight against climate change through superior energy efficiency.
+              </p>
+            </div>
+            <div class="usa-width-one-half home-top">
+              
+              <img src="img/appliances1.jpg" alt="">
+              
+            </div>
+          </div>         
+
+	
+	  <footer class="usa-footer usa-footer-big usa-sans" role="contentinfo">
     <div class="usa-grid usa-footer-return-to-top top clearfix">
       <a href="#top">Return to top <i class="fa fa-caret-up"></i></a>
     </div>

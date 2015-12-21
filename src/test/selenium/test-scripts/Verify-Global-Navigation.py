@@ -18,14 +18,13 @@ class VerifyGlobalNavigation(unittest.TestCase):
     def test_verify_global_navigation(self):
         driver = self.driver
         driver.get(self.base_url + "/")
-        driver.find_element_by_link_text("Disclaimers").click()
-        driver.find_element_by_link_text("About the Tool").click()
-        driver.find_element_by_css_selector("div.links > a[title=\"Disclaimers\"]").click()
-        driver.find_element_by_css_selector("div.links > a[title=\"About the Tool\"]").click()
-        driver.find_element_by_css_selector("img[alt=\"Aquilent logo\"]").click()
-        driver.back()
-        driver.find_element_by_css_selector("a[title=\"Aquilent Web Site\"] > img[alt=\"Aquilent logo\"]").click()
-        driver.back()
+        # ERROR: Caught exception [ERROR: Unsupported command [selectWindow | null | ]]
+        for i in range(60):
+            try:
+                if "Select an ENERGY STAR appliance:" == driver.find_element_by_css_selector("label").text: break
+            except: pass
+            time.sleep(1)
+        else: self.fail("time out")
     
     def is_element_present(self, how, what):
         try: self.driver.find_element(by=how, value=what)
