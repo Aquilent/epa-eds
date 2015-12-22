@@ -5,21 +5,22 @@
 @include('partials.category-selector')
 
 <div class="usa-grid">
-    <div class="usa-width-one-whole">
-
+<div class="usa-width-one-whole">
       <div class="filter-container clearfix">
-        <div class="filter-container-left">{{ $total }} certified appliances</div>
-        <div class="filter-container-right">
-          <form action="" class="filter-form">
-            <select name="options" id="options" class="usa-input-tiny" onchange="location = this.options[this.selectedIndex].value;">
-              <option value="#">Sort</option>
-              <option value="{{ route('results', [ 'category' => $category, 'sort' => 'SALESRANK']) }}">Top Seller</option>
-              <option value="{{ route('results', [ 'category' => $category, 'sort' => 'ENERGYUSE' ]) }}">Energy Use</option>
-              <option value="{{ route('results', [ 'category' => $category, 'sort' => 'REVIEWS.starRating' ]) }}">Star Rating</option>
-              <option value="{{ route('results', [ 'category' => $category, 'sort' => 'PRICE' ]) }}">Price</option>
-          </select>
-      </form>
-  </div>
+          <div class="filter-container-left">{{ $total }} Certified {{ $categories[$category] }}</div>
+          <div class="filter-container-right clearfix">
+              <div class="sort-left">Sort:</div>
+              <div class="sort-right">
+                <form action="" class="filter-form">
+                  <select name="options" id="options" class="usa-input-tiny" onchange="location = this.options[this.selectedIndex].value;">
+                    <option @if(!$sort || $sort == 'SALESRANK') selected="selected" @endif value="{{ route('results', [ 'category' => $category ]) }}">Top Seller</option>
+                    <option @if($sort == 'ENERGYUSE') selected="selected" @endif value="{{ route('results', [ 'category' => $category, 'sort' => 'ENERGYUSE' ]) }}">Energy Use</option>
+                    {{-- <option @if($sort == 'REVIEWS.starRating') selected="selected" @endif value="{{ route('results', [ 'category' => $category, 'sort' => 'REVIEWS.starRating' ]) }}">Star Rating</option> --}}
+                    <option @if($sort == 'PRICE') selected="selected" @endif value="{{ route('results', [ 'category' => $category, 'sort' => 'PRICE' ]) }}">Price</option>
+                </select>
+            </form>
+        </div>
+    </div>
 </div>
 
 @foreach($items AS $item) 
@@ -34,7 +35,7 @@
           Estimated Annual Energy Use (kWh/yr): {{ $item['ENERGYUSE'] }}<br />
           Price: {{ $item['FORMATTEDPRICE'] }}<br />
 
-          <span class="rating-stars">
+          {{-- <span class="rating-stars">
               @for ($i = 1; $i <= 5; $i++)
               @if($item['REVIEWS']['starRating'] >= $i)
               <i class="fa fa-star"></i>
@@ -43,8 +44,9 @@
               @endif
               @endfor 
               <span class="star-num">({{ $item['REVIEWS']['reviewCount']}})</span>
-          </span>
-          <span class="result-ES-logo"><img src="img/ES_learn_more_vert.jpg" alt="Logo image"></span>
+          </span> --}}
+          
+          <span class="result-ES-logo"><img src="img/ES_learn_more_vert.jpg" alt="Logo image" style="margin-left: 0px;"></span>
       </p>
   </div></a>
 </div>
@@ -53,15 +55,21 @@
 @if ($total/10 > 1)
 <ul class="pagination pagination-sm">
     @for ($i = 1; $i < ($total/10 + 1); $i++)
-        @if ($p == $i)
-            <li class="active"><a href="#">{{ $i }}</a></li>
-        @else
-            <li><a href="{{ route('results', [ 'category' => $category, 'p' => $i ]) }}">{{ $i }}</a></li>
-        @endif
+    @if ($p == $i)
+    <li class="active"><a href="#">{{ $i }}</a></li>
+    @else
+    <li><a href="{{ route('results', [ 'category' => $category, 'sort' => $sort, 'p' => $i ]) }}">{{ $i }}</a></li>
+    @endif
     @endfor
 </ul>
 @endif
 
 </div>
 </div>  
+@stop
+
+@section('return-link')
+    <div class="usa-grid usa-footer-return-to-top top clearfix">
+      <a href="#top">Return to top <i class="fa fa-caret-up"></i></a>
+    </div>
 @stop
