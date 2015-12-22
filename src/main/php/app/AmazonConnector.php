@@ -5,12 +5,20 @@ use GuzzleHttp\Exception\ClientException;
 
 class AmazonConnector {
 
-  public $BrowseNodes = [
+  public static $BrowseNodes = [
     'dryers' => 13397481,
     'washers' => 13397491,
-    'dishwashers' => 3741271,
+    'dishwashers' => 3741281,
     'freezers' => 3741331,
     'refrigerators' => 3741361
+  ];
+
+  public static $Categories = [
+        'dryers' => 'Clothes Dryers',
+        'washers' => 'Clothes Washers',
+        'dishwashers' => 'Dishwashers',
+        'freezers' => 'Freezers',
+        'refrigerators' => 'Refrigerators'
   ];
 
   public function makeRequest($category, $page) {
@@ -18,24 +26,33 @@ class AmazonConnector {
     $response = $client->get($this->signRequest($category, $page), [
     ]);
 
-    //dd(json_decode(json_encode($response->xml()->Items)));
-
     return $response;
+  }
+
+  public function getCachedItems($category = 'washers') {
+    $items = \Cache::remember($category, 60, function() use ($category) {
+      return $this->getItems($category);
+    });
+    return $items;
   }
 
   public function getItems($category = 'washers') {
     $items = [];
 
-    for ($i = 1; $i <= 1; $i++) {
+    for ($i = 1; $i <= 10; $i++) {
       foreach($this->makeRequest($category, $i)->xml()->Items->Item AS $item) {
         try {
           $items[] = $this->getItem($item);
         }
         catch(\Exception $e) {
-          dd(json_decode(json_encode($item)));
+          dd($e->getMessage(), json_decode(json_encode($item)));
         }
-        
+    
       }
+
+      // Wait atleast 1 second between api calls to respoect amazons limits
+      sleep(1);
+
     }
 
     return collect($items);
@@ -56,41 +73,14 @@ class AmazonConnector {
         'PRICE' => ((String) $item->OfferSummary->LowestNewPrice->FormattedPrice == "Too Low To Display") ? 0 : (String) $item->OfferSummary->LowestNewPrice->Amount,
         'FORMATTEDPRICE' => (String) $item->OfferSummary->LowestNewPrice->FormattedPrice,
         'SALESRANK' => (String) $item->SalesRank,
-        'REVIEWS' => $this->getReviewHtml($item),
-        'ENERGYUSE' => 608
+        'REVIEWURL' => (String) $item->CustomerReviews->IFrameURL,
+        'ENERGYUSE' => $this->getEnergyUse($item)
       ];
   }
 
-  public function getReviewHtml($item) {
-    // return [
-    //   'starRating' => "0",
-    //   'reviewCount' => "0"
-    // ];
-
-    $url = (String) $item->CustomerReviews->IFrameURL;
-    $client = new Client();
-    $response = $client->get($url);
-    $body = trim((String) $response->getBody());
-
-    libxml_use_internal_errors(true);
-    $dom = new \DOMDocument;
-    $dom->loadHtml($body);
-    $xml = simplexml_import_dom($dom);
-
-    $elements = $xml->xpath('//span[@class="crAvgStars"]');
-
-    if ($elements) {
-      $e = $elements[0];
-      return [
-        'starRating' => explode(" ", (String) $e->span->a->img['title'])[0],
-        'reviewCount' => explode(" ", (String) $e->a)[0]
-      ];
-    }
-
-    return [
-      'starRating' => "0",
-      'reviewCount' => "0"
-    ];
+  public function getEnergyUse($item) {
+    $choices = [685, 608, 608, 556, 531, 531, 331];
+    return $choices[array_rand($choices)];
   }
 
   public function signRequest($category, $page) {
@@ -115,8 +105,8 @@ class AmazonConnector {
         "Keywords" => "Energy Star",
         "ResponseGroup" => "Images,ItemAttributes,Reviews,SalesRank,OfferSummary,Offers",
         "ItemPage" => $page,
-        "Sort" => "salesrank",
-        "BrowseNode" => $this->BrowseNodes[$category]
+        "Sort" => "pmrank",
+        "BrowseNode" => static::$BrowseNodes[$category]
     );
 
     // Set current timestamp if not set

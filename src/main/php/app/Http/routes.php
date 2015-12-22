@@ -15,17 +15,23 @@ Route::get('/', [ 'as' => 'index', function()
     return view('index', [
         'category' => null
     ]);
+
 }]);
 
 Route::get('results', [ 'as' => 'results', function()
 {
-    $category = Request::input('category');
-    $p = Request::has('p') ? Request::input('p') : 1;
-    $sort = Request::has('sort') ? Request::input('sort') : "SALESRANK";
     $awsConnector = new App\AmazonConnector;
-    $allItems = $awsConnector->getItems($category);
-    $total = count($allItems);
-    $items = $allItems->sortByDesc($sort)->forPage($p, 10);
+    $category = Request::input('category');
+    $categories = App\AmazonConnector::$Categories;
 
-    return view('results', compact('category', 'items', 'p', 'total'));
+    $p = Request::has('p') ? Request::input('p') : 1;
+    $sort = Request::input('sort');
+
+    $allItems = $awsConnector->getCachedItems($category);
+    $items = ($sort) ? $allItems->sortBy($sort)->forPage($p, 10) : $allItems->forPage($p, 10);
+    $total = count($allItems);
+
+    //dd(json_decode(json_encode($allItems)));
+
+    return view('results', compact('category', 'categories', 'sort', 'items', 'p', 'total'));
 }]);
