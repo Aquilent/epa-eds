@@ -10,35 +10,28 @@
 | and give it the controller to call when that URI is requested.
 |
 */
-
-Route::get('instructions', function()
+Route::get('/', [ 'as' => 'index', function()
 {
-    return view('instructions');
-});
+    return view('index', [
+        'category' => null
+    ]);
 
-Route::get('disclaimers', function()
-{
-    return view('disclaimers');
-});
-
-Route::get('interactions', function()
-{
-    return view('interactions');
-});
-
-Route::get('/', [ 'as' => 'home', function()
-{
-    return view('index');
 }]);
 
-Route::post('/', 'ReactionController@getReactions');
+Route::get('results', [ 'as' => 'results', function()
+{
+    $awsConnector = new App\AmazonConnector;
+    $category = Request::input('category');
+    $categories = App\AmazonConnector::$Categories;
 
-Route::get('/{drugOne}/{drugTwo?}', [
-  'as'   => 'listReactions',
-  'uses' => 'ReactionController@listReactions'
-]);
+    $p = Request::has('p') ? Request::input('p') : 1;
+    $sort = Request::input('sort');
 
-Route::get('/r/{reaction}/{drugOne}/{drugTwo?}', [
-  'as'   => 'listInteractions',
-  'uses' => 'ReactionController@listInteractions'
-]);
+    $allItems = $awsConnector->getCachedItems($category);
+    $items = ($sort) ? $allItems->sortBy($sort)->forPage($p, 10) : $allItems->forPage($p, 10);
+    $total = count($allItems);
+
+    //dd(json_decode(json_encode($allItems)));
+
+    return view('results', compact('category', 'categories', 'sort', 'items', 'p', 'total'));
+}]);

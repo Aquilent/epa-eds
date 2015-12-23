@@ -27,7 +27,7 @@ module Common
 
   # See http://opscode.github.io/bento/ for Vagrant boxes
   puts "--- ENV[DEFAULT_VAGRANT_BOX] = #{ENV['DEFAULT_VAGRANT_BOX']}"
-  DEFAULT_VAGRANT_BOX = isEmpty(ENV['DEFAULT_VAGRANT_BOX']) ? "chef/centos-6.6" : 
+  DEFAULT_VAGRANT_BOX = isEmpty(ENV['DEFAULT_VAGRANT_BOX']) ? "bento/centos-6.7" : 
   # strip string to avoid preceeding or trailing whitespace that cause the name to 
   # be incorrect, but it can be hard to determine why. Spaces can come from setting 
   # a variable in a command script, e.g. trailing spaces are included
@@ -45,7 +45,8 @@ module Common
   puts " WARNING: Running a virtual machine inside another "
   puts "     virtual machine may or may not work. "
   puts "     E.g. AWS WorkSpaces allows 32-bit Vagrant boxes, "
-  puts "      but not 64-bit boxes!"
+  puts "     but not 64-bit boxes! "
+  puts "     You should switch to a i386 box, like bento/centos-6.7-i386"
   puts "---------------------------------------------------------"
 
 end

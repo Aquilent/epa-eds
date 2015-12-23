@@ -12,7 +12,7 @@ REM ----------------------------------------------------------------
 REM Comment out the following line, if you are using an environment that does not allow 64-bit 
 REM Virtualization, such as AWS Workspaces.
 REM This could manifest itself, as the Vagrant box never becoming accessible
-REM if "%DEFAULT_VAGRANT_BOX%" == "" (set DEFAULT_VAGRANT_BOX=chef/centos-6.6-i386 )
+REM if "%DEFAULT_VAGRANT_BOX%" == "" (set DEFAULT_VAGRANT_BOX=bento/centos-6.7-i386 )
 
 REM ----------------------------------------------------------------
 REM Change the name of the branch from 'master' to 'your-branch-name' 
