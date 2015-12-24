@@ -2121,19 +2121,19 @@ body {
 .filter-container {
   background-color: #2e8540;
   color: #fff;
-  padding: 10px;
+  padding: 5px;
   margin-bottom: 10px; }
 
 .filter-container-left {
   float: left;
-  width: 110px;
+  width: 90px;
   white-space: normal;
   font-size: .85em; }
 
 .filter-container-right {
   float: right;
   vertical-align: middle;
-  width: 190px;
+  width: 170px;
   font-size: .85em; }
 
 .filter-container-right a {
@@ -2155,14 +2155,17 @@ body {
   margin-top: 0; }
 
 .gray {
-  color: #aeb0b5; }
+  color: #5b616b; }
 
 .product-result {
   margin-bottom: 10px;
   border-bottom: solid 1px #2e8540; }
 
-.product-result a {
-  color: #212121; }
+.product-result a:link {
+  color: #112e51; }
+
+.product-result a:hover {
+  color: #0071bc; }
 
 .product-result-left {
   width: 30%;
@@ -2220,7 +2223,7 @@ body {
   margin-top: 10px; }
 
 .footer-right p {
-  font-size: .8em; }
+  font-size: .7em; }
 
 .header {
   background: #112e51;
