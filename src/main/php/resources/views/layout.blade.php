@@ -1,6 +1,7 @@
 <!-- layout.nunjucks -->
 
 <!DOCTYPE html>
+<html lang="en”>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
@@ -8,7 +9,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Eco Shopper</title>
+    <title>@yield('page-title')</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta data-name="last-updated" data-content="{{ Cache::get('last_updated') }}" />
@@ -28,7 +29,7 @@
   <header class="header">
     <section class="usa-grid">
       <div class="usa-width-one-half">
-          <a href="{{ route('index') }}" style="box-shadow: none;"><img src="img/eco-shop-logo-2.png" alt=""></a>
+          <a href="{{ route('index') }}" style="box-shadow: none;"><img src="img/eco-shop-logo-2.png" alt="Eco shopper Home Page"></a>
       </div>
       <div class="usa-width-one-half header-tag-line">
           <h4>Streamlining the ENERGY STAR shopping experience</h4>
@@ -36,22 +37,23 @@
     </section>
   </header>
 
-  @yield('content')
+  <main id="content" class="group" role="main">
+    @yield('content')
+  </main>
 
   <footer class="usa-footer usa-footer-big usa-sans" role="contentinfo">
-
     @yield('return-link')
 
     <div class="usa-footer-secondary_section usa-footer-big-secondary-section">
       <div class="usa-grid">
 
-        <div class="usa-width-one-half">
+        <div class="usa-width-one-half footer-left">
 
-          The eco&#9734;shopper application bridges information and action. It is designed to display and sort only ENERGY STAR appliances in order of customer satisfaction, buying popularity, energy efficiency and price. eco&#9734;shopper is your single-source of information to make an informed ENERGY STAR purchase – protecting the climate as a result.
+          <p>The eco&#9734;shopper application bridges information and action. It is designed to display and sort only ENERGY STAR appliances in order of customer satisfaction, buying popularity, energy efficiency and price. eco&#9734;shopper is your single-source of information to make an informed ENERGY STAR purchase – protecting the climate as a result.</p>
 
         </div>
 
-        <div class="usa-width-one-half">
+        <div class="usa-width-one-half footer-right">
 
           <a href="http://www.aquilent.com"><img src="img/aquilent-logo.png" alt="Aquilent"></a>
 

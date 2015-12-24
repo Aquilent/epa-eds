@@ -829,7 +829,7 @@ select {
   color: #000;
   display: block;
   font-size: 1.7rem;
-  margin: .2em 0;
+  margin: .1em 0;
   max-width: 46rem;
   width: 100%;
   outline: none;
@@ -927,9 +927,10 @@ select {
   background-color: #ffffff;
   background-image: url("../img/arrow-down.png");
   background-image: url("../img/arrow-down.svg");
-  background-position: right 1.3rem center;
+  background-position: right .5rem center;
   background-repeat: no-repeat;
-  background-size: 1.3rem; }
+  background-size: .7rem;
+  font-size: 1.25rem; }
 
 legend {
   font-size: 3rem;
@@ -2120,19 +2121,19 @@ body {
 .filter-container {
   background-color: #2e8540;
   color: #fff;
-  padding: 10px;
+  padding: 5px;
   margin-bottom: 10px; }
 
 .filter-container-left {
   float: left;
-  width: 140px;
+  width: 90px;
   white-space: normal;
   font-size: .85em; }
 
 .filter-container-right {
   float: right;
   vertical-align: middle;
-  width: 200px;
+  width: 170px;
   font-size: .85em; }
 
 .filter-container-right a {
@@ -2140,7 +2141,7 @@ body {
 
 .sort-left {
   float: left;
-  margin-left: 50px;
+  margin-left: 60px;
   margin-top: 15px; }
 
 .sort-right {
@@ -2154,14 +2155,17 @@ body {
   margin-top: 0; }
 
 .gray {
-  color: #aeb0b5; }
+  color: #5b616b; }
 
 .product-result {
   margin-bottom: 10px;
   border-bottom: solid 1px #2e8540; }
 
-.product-result a {
-  color: #212121; }
+.product-result a:link {
+  color: #112e51; }
+
+.product-result a:hover {
+  color: #0071bc; }
 
 .product-result-left {
   width: 30%;
@@ -2210,6 +2214,16 @@ body {
   height: 25px;
   width: 25px;
   margin-left: 30px; }
+
+.footer-left p {
+  border: solid 1px #323a45;
+  padding: .5em; }
+
+.footer-right img {
+  margin-top: 10px; }
+
+.footer-right p {
+  font-size: .7em; }
 
 .header {
   background: #112e51;

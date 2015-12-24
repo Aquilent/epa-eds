@@ -1,6 +1,6 @@
 #!/bin/bash
 
 service httpd start
-<%if node['epa_eds']['varnish']['enabled']  then %>
+<%if ode['epa_eds']['webserver']['use_varnish'] then %>
 service varnish start
 <% end %>
