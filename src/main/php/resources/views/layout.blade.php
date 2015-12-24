@@ -28,8 +28,8 @@
 
   <header class="header">
     <section class="usa-grid">
-      <div class="usa-width-one-half">
-          <a href="{{ route('index') }}" style="box-shadow: none;"><img src="img/eco-shop-logo-2.png" alt="Eco shopper Home Page"></a>
+      <div class="usa-width-one-half logo">
+          <a href="{{ route('index') }}"><img src="img/eco-shop-logo-2.png" alt="Eco shopper Home Page"></a>
       </div>
       <div class="usa-width-one-half header-tag-line">
           <h4>Streamlining the ENERGY STAR shopping experience</h4>

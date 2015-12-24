@@ -2172,6 +2172,10 @@ body {
   float: left;
   padding-top: 5px; }
 
+.product-result-left img {
+  display: block;
+  margin: auto; }
+
 .product-result-right {
   margin-left: 5%;
   width: 65%;
@@ -2241,6 +2245,9 @@ body {
 @media screen and (min-width: 1201px) {
   .header-tag-line h4 {
     margin-top: 100px; } }
+
+.logo a {
+  box-shadow: none; }
 
 .filter-form form {
   display: block; }
