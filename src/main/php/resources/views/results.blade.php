@@ -11,10 +11,10 @@
       <div class="filter-container clearfix">
           <div class="filter-container-left">{{ $total }} Certified {{ $categories[$category] }}</div>
           <div class="filter-container-right clearfix">
-              <div class="sort-left">Sort:</div>
+              <label class="sort-left" for="sort-filter">Sort:</label>
               <div class="sort-right">
                 <form action="" class="filter-form">
-                  <select name="options" id="options" class="usa-input-tiny" onchange="location = this.options[this.selectedIndex].value;">
+                  <select name="sort-filter" id="sort-filter" class="usa-input-tiny" onchange="location = this.options[this.selectedIndex].value;">
                     <option @if(!$sort || $sort == 'SALESRANK') selected="selected" @endif value="{{ route('results', [ 'category' => $category ]) }}">Top Seller</option>
                     <option @if($sort == 'ENERGYUSE') selected="selected" @endif value="{{ route('results', [ 'category' => $category, 'sort' => 'ENERGYUSE' ]) }}">Energy Use</option>
                     {{-- <option @if($sort == 'REVIEWS.starRating') selected="selected" @endif value="{{ route('results', [ 'category' => $category, 'sort' => 'REVIEWS.starRating' ]) }}">Star Rating</option> --}}
@@ -48,7 +48,7 @@
               <span class="star-num">({{ $item['REVIEWS']['reviewCount']}})</span>
           </span> --}}
           
-          <span class="result-ES-logo"><img src="img/ES_learn_more_vert.jpg" alt="Logo image" style="margin-left: 0px;"></span>
+          <span class="result-ES-logo"><img src="img/ES_learn_more_vert.jpg" alt="" style="margin-left: 0px;"></span>
       </p>
   </div></a>
 </div>
