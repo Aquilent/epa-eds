@@ -1,5 +1,7 @@
 @extends('layout')
 
+@section('page-title', 'Eco Shopper - Home')
+
 @section('content')
 @include('partials.category-selector')
 <div class="usa-grid">

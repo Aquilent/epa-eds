@@ -1,5 +1,7 @@
 @extends('layout')
 
+@section('page-title', "Eco Shopper - $categories[$category] Results Page $p")
+
 @section('content')
 
 @include('partials.category-selector')
@@ -32,7 +34,7 @@
       <h5>{{ $item['TITLE'] }}</h5>
       <p class="prod-data">
           <span class="gray">By: {{ $item['BRAND'] }}</span><br />
-          Estimated Annual Energy Use (kWh/yr): {{ $item['ENERGYUSE'] }}<br />
+          Estimated Annual Energy Use (kWh/yr): {{ ($item['ENERGYUSE'] == 9999) ? 'N/A' :  $item['ENERGYUSE'] }}<br />
           Price: {{ $item['FORMATTEDPRICE'] }}<br />
 
           {{-- <span class="rating-stars">

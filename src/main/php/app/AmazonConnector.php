@@ -21,6 +21,22 @@ class AmazonConnector {
         'refrigerators' => 'Refrigerators'
   ];
 
+  public static $Endpoints = [
+        'dryers' => 'https://data.energystar.gov/resource/t9u7-4d2j.json',
+        'washers' => 'https://data.energystar.gov/resource/bghd-e2wd.json',
+        'dishwashers' => 'https://data.energystar.gov/resource/58b3-559d.json',
+        'freezers' => 'https://data.energystar.gov/resource/8t9c-g3tn.json',
+        'refrigerators' => 'https://data.energystar.gov/resource/p5st-her9.json'
+  ];
+
+  public static $EnergyFields = [
+        'dryers' => 'estimated_annual_energy_use_kwh_yr',
+        'washers' => 'annual_energy_use_kwh_year',
+        'dishwashers' => 'annual_energy_use_kwh_year',
+        'freezers' => 'annual_energy_use_kwh_yr',
+        'refrigerators' => 'annual_energy_use_kwh_yr'
+  ];
+
   public function makeRequest($category, $page) {
     $client = new Client();
     $response = $client->get($this->signRequest($category, $page), [
@@ -51,9 +67,11 @@ class AmazonConnector {
       }
 
       // Wait atleast 1 second between api calls to respoect amazons limits
-      sleep(1);
+      sleep(2);
 
     }
+
+    $items = $this->addEnergyStarData($category, $items);
 
     return collect($items);
   }
@@ -74,13 +92,8 @@ class AmazonConnector {
         'FORMATTEDPRICE' => (String) $item->OfferSummary->LowestNewPrice->FormattedPrice,
         'SALESRANK' => (String) $item->SalesRank,
         'REVIEWURL' => (String) $item->CustomerReviews->IFrameURL,
-        'ENERGYUSE' => $this->getEnergyUse($item)
+        'ENERGYUSE' => 9999
       ];
-  }
-
-  public function getEnergyUse($item) {
-    $choices = [685, 608, 608, 556, 531, 531, 331];
-    return $choices[array_rand($choices)];
   }
 
   public function signRequest($category, $page) {
@@ -136,7 +149,30 @@ class AmazonConnector {
     $request_url = 'http://'.$endpoint.$uri.'?'.$canonical_query_string.'&Signature='.rawurlencode($signature);
 
     return $request_url;
-
   }
 
+  public function getEnergyStarData($category) {
+    return (new Client)->get(static::$Endpoints[$category])->json();
+  }
+
+  public function addEnergyStarData($category, $items) {
+    $data = $this->getEnergyStarData($category);
+    foreach($items AS &$item) {
+      foreach($data AS $row) {
+        if (isset($row['upc']) && str_contains($row['upc'], $item['UPC'])) {
+          $item['ENERGYUSE'] = $row[static::$EnergyFields[$category]];
+          continue 2;
+        }
+      }
+
+      foreach($data AS $row) {
+        if ($row['brand_name'] == $item['BRAND'] && str_is($row['model_number'], $item['PartNumber'])) {
+          $item['ENERGYUSE'] = $row[static::$EnergyFields[$category]];
+          continue 2;
+        }
+      }
+    }
+
+    return $items;
+  }
 }
