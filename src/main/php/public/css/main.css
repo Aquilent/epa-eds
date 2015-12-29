@@ -1793,7 +1793,7 @@ li.usa-footer-primary-content {
       padding: 0; } }
 
 .usa-footer-secondary_section {
-  background-color: #d6d7d9;
+  background-color: #0071bc;
   padding-top: 3rem;
   padding-bottom: 3rem; }
   .usa-footer-secondary_section a {
@@ -2133,7 +2133,7 @@ body {
 .filter-container-right {
   float: right;
   vertical-align: middle;
-  /* width: 193px; */
+  width: 193px;
   font-size: .85em; }
 
 .filter-container-right a {
@@ -2220,7 +2220,7 @@ body {
   margin-left: 30px; }
 
 .footer-left p {
-  border: solid 1px #323a45;
+  /*border: solid 1px $color-gray-dark;*/
   padding: .5em; }
 
 .footer-right img {
@@ -2229,8 +2229,11 @@ body {
 .footer-right p {
   font-size: .7em; }
 
+.usa-footer-logo p {
+  color: #ffffff; }
+
 .header {
-  background: #112e51;
+  background: #0071bc;
   padding: 5px 2px;
   color: #fff;
   border-bottom: solid 3px #fdb81e; }
@@ -2243,8 +2246,8 @@ body {
   border: none; }
 
 @media screen and (min-width: 1201px) {
-  .header-tag-line h4 {
-    margin-top: 100px; } }
+  .header-tag-line h5 {
+    margin-top: 70px; } }
 
 .logo a {
   box-shadow: none; }

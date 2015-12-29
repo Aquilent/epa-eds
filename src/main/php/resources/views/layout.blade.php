@@ -25,42 +25,48 @@
 
     <!-- You write code for this content block in another file -->
      
+  @if (Route::is('index'))
+    <header class="header">
+      <section class="usa-grid">
+        <div class="usa-width-one-half logo">
+            <a href="{{ route('index') }}"><img src="img/eco-shop-logo-3.png" alt="Eco shopper Home Page"></a>
+        </div>
+        <div class="usa-width-one-half header-tag-line">
+            <h4>Search for top-selling ENERGY STAR&reg; rated appliances on Amazon.com </h4>
+        </div>
+      </section>
+    </header>
+  @else 
+    <header class="header">
+      <section class="usa-grid">
+        <div class="usa-width-one-half">
+            <a href="{{ route('index') }}"><img src="img/eco-shop-logo-results-3.png" alt=""></a>
+        </div>
+      </section>
+    </header>
+  @endif
 
-  <header class="header">
-    <section class="usa-grid">
-      <div class="usa-width-one-half logo">
-          <a href="{{ route('index') }}"><img src="img/eco-shop-logo-2.png" alt="Eco shopper Home Page"></a>
-      </div>
-      <div class="usa-width-one-half header-tag-line">
-          <h4>Search for top-selling ENERGY STAR&reg; rated appliances on Amazon.com </h4>
-      </div>
-    </section>
-  </header>
 
   <main id="content" class="group" role="main">
     @yield('content')
   </main>
 
-  <footer class="usa-footer usa-footer-big usa-sans" role="contentinfo">
+  <footer class="usa-footer usa-footer-slim usa-sans" role="contentinfo">
     @yield('return-link')
+    <div class="usa-footer-primary-section">
+      <div class="usa-grid-full footer-left">
+        
+        <p>The eco&#9734;shopper application bridges information and action. It is designed to display and sort only ENERGY STAR appliances in order of buying popularity, energy efficiency and price. eco&#9734;shopper is your single-source of information to make an informed ENERGY STAR purchase – protecting the climate as a result.</p>
+        
+      </div>
+    </div>
 
-    <div class="usa-footer-secondary_section usa-footer-big-secondary-section">
+    <div class="usa-footer-secondary_section">
       <div class="usa-grid">
-
-        <div class="usa-width-one-half footer-left">
-
-          <p>The eco&#9734;shopper application bridges information and action. It is designed to display and sort only ENERGY STAR appliances in order of buying popularity, energy efficiency and price. eco&#9734;shopper is your single-source of information to make an informed ENERGY STAR purchase – protecting the climate as a result.</p>
-
-        </div>
-
-        <div class="usa-width-one-half footer-right">
-
+        <div class="usa-footer-logo footer-right">
           <a href="http://www.aquilent.com" style="box-shadow: none;"><img src="img/aquilent-logo.png" alt="Aquilent"></a>
-
           <p>Developed by Aquilent &copy; 2015 | All rights reserved.</p>
-
         </div>
-
       </div>
     </div>
   </footer>
