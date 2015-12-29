@@ -32,7 +32,7 @@
           <a href="{{ route('index') }}"><img src="img/eco-shop-logo-2.png" alt="Eco shopper Home Page"></a>
       </div>
       <div class="usa-width-one-half header-tag-line">
-          <h4>Search for Top Selling ENERGY STAR &reg; rated appliances on Amazon.com </h4>
+          <h4>Search for top-selling ENERGY STAR&reg; rated appliances on Amazon.com </h4>
       </div>
     </section>
   </header>
@@ -55,7 +55,7 @@
 
         <div class="usa-width-one-half footer-right">
 
-          <a href="http://www.aquilent.com"><img src="img/aquilent-logo.png" alt="Aquilent"></a>
+          <a href="http://www.aquilent.com" style="box-shadow: none;"><img src="img/aquilent-logo.png" alt="Aquilent"></a>
 
           <p>Developed by Aquilent &copy; 2015 | All rights reserved.</p>
 
