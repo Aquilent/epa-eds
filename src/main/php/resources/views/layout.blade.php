@@ -32,7 +32,7 @@
           <a href="{{ route('index') }}"><img src="img/eco-shop-logo-2.png" alt="Eco shopper Home Page"></a>
       </div>
       <div class="usa-width-one-half header-tag-line">
-          <h4>Streamlining the ENERGY STAR shopping experience</h4>
+          <h4>Search for Top Selling ENERGY STAR &reg; rated appliances on Amazon.com </h4>
       </div>
     </section>
   </header>

@@ -604,7 +604,7 @@ body {
     margin-right: 0; }
 
 .usa-grid {
-  padding: 0 3rem; }
+  padding: 0 1rem; }
 
 .usa-grid-full {
   padding: 0; }
@@ -2126,14 +2126,14 @@ body {
 
 .filter-container-left {
   float: left;
-  width: 90px;
+  width: 100px;
   white-space: normal;
-  font-size: .85em; }
+  font-size: .83em; }
 
 .filter-container-right {
   float: right;
   vertical-align: middle;
-  /* width: 190px; */
+  width: 193px;
   font-size: .85em; }
 
 .filter-container-right a {

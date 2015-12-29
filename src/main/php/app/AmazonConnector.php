@@ -5,6 +5,9 @@ use GuzzleHttp\Exception\ClientException;
 
 class AmazonConnector {
 
+  /**
+   * Amazon Browse Nodes for the different appliance categories
+   */
   public static $BrowseNodes = [
     'dryers' => 13397481,
     'washers' => 13397491,
@@ -13,6 +16,9 @@ class AmazonConnector {
     'refrigerators' => 3741361
   ];
 
+  /**
+   * Category titles
+   */
   public static $Categories = [
         'dryers' => 'Clothes Dryers',
         'washers' => 'Clothes Washers',
@@ -21,6 +27,9 @@ class AmazonConnector {
         'refrigerators' => 'Refrigerators'
   ];
 
+  /**
+   * Energy Star endpoints for each category dataset
+   */
   public static $Endpoints = [
         'dryers' => 'https://data.energystar.gov/resource/t9u7-4d2j.json',
         'washers' => 'https://data.energystar.gov/resource/bghd-e2wd.json',
@@ -29,6 +38,9 @@ class AmazonConnector {
         'refrigerators' => 'https://data.energystar.gov/resource/p5st-her9.json'
   ];
 
+  /**
+   * Energy usage field for each category
+   */
   public static $EnergyFields = [
         'dryers' => 'estimated_annual_energy_use_kwh_yr',
         'washers' => 'annual_energy_use_kwh_year',
@@ -37,6 +49,13 @@ class AmazonConnector {
         'refrigerators' => 'annual_energy_use_kwh_yr'
   ];
 
+  /**
+   * Makes REST Request to Amazon
+   *
+   * @param  string
+   * @param  string 
+   * @return GuzzleHttp\Response
+   */
   public function makeRequest($category, $page) {
     $client = new Client();
     $response = $client->get($this->signRequest($category, $page), [
@@ -88,8 +107,8 @@ class AmazonConnector {
         'MANUFACTURER' => (String) $item->ItemAttributes->Manufacturer,
         'MPN' => (String) $item->ItemAttributes->MPN,
         'UPC' => (String) $item->ItemAttributes->UPC,
-        'PRICE' => ((String) $item->OfferSummary->LowestNewPrice->FormattedPrice == "Too Low To Display") ? 0 : (String) $item->OfferSummary->LowestNewPrice->Amount,
-        'FORMATTEDPRICE' => (String) $item->OfferSummary->LowestNewPrice->FormattedPrice,
+        'PRICE' => ((String) $item->OfferSummary->LowestNewPrice->FormattedPrice == "Too Low To Display") ? 99999999 : (String) $item->OfferSummary->LowestNewPrice->Amount,
+        'FORMATTEDPRICE' => ((String) $item->OfferSummary->LowestNewPrice->FormattedPrice == "Too Low To Display") ? "See retailer for more information" : (String) $item->OfferSummary->LowestNewPrice->FormattedPrice,
         'SALESRANK' => (String) $item->SalesRank,
         'REVIEWURL' => (String) $item->CustomerReviews->IFrameURL,
         'ENERGYUSE' => 9999
