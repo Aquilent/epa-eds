@@ -11,7 +11,7 @@
     <ul>
       <li>See top-selling products.</li> 
 
-      <li>Read buyer reviews.</li> 
+      <li>Sort by price.</li> 
 
       <li>Compare energy efficiency.</li>                 
     </ul>

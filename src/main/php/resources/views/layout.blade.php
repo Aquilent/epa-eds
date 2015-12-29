@@ -49,7 +49,7 @@
 
         <div class="usa-width-one-half footer-left">
 
-          <p>The eco&#9734;shopper application bridges information and action. It is designed to display and sort only ENERGY STAR appliances in order of customer satisfaction, buying popularity, energy efficiency and price. eco&#9734;shopper is your single-source of information to make an informed ENERGY STAR purchase – protecting the climate as a result.</p>
+          <p>The eco&#9734;shopper application bridges information and action. It is designed to display and sort only ENERGY STAR appliances in order of buying popularity, energy efficiency and price. eco&#9734;shopper is your single-source of information to make an informed ENERGY STAR purchase – protecting the climate as a result.</p>
 
         </div>
 

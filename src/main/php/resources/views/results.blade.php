@@ -28,7 +28,7 @@
 @foreach($items AS $item) 
 <div class="product-result clearfix">
     <a href="{{ $item['URL'] }}" target="_blank"><div class="product-result-left">
-      <img src="{{ $item['IMAGE'] }}">
+      <img src="{{ $item['IMAGE'] }}" alt="">
   </div>
   <div class="product-result-right">
       <h5>{{ $item['TITLE'] }}</h5>
