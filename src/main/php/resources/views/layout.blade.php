@@ -39,8 +39,8 @@
   @else 
     <header class="header">
       <section class="usa-grid">
-        <div class="usa-width-one-half">
-            <a href="{{ route('index') }}"><img src="img/eco-shop-logo-results-3.png" alt=""></a>
+        <div class="usa-width-one-half logo">
+            <a href="{{ route('index') }}"><img src="img/eco-shop-logo-results-3.png" alt="Eco shopper Home Page"></a>
         </div>
       </section>
     </header>

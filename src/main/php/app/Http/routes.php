@@ -33,6 +33,6 @@ Route::get('results', [ 'as' => 'results', function()
 
 Route::get('refresh', [ 'as' => 'refresh', function()
 {
-    $exitCode = Artisan::call('refresh-results');
+    $exitCode = Artisan::call('refresh:results');
     return redirect()->route('index');
 }]);
