@@ -930,7 +930,7 @@ select {
   background-position: right .5rem center;
   background-repeat: no-repeat;
   background-size: .7rem;
-  font-size: 1.25rem; }
+  font-size: 1.37rem; }
 
 legend {
   font-size: 3rem;
@@ -2133,7 +2133,7 @@ body {
 .filter-container-right {
   float: right;
   vertical-align: middle;
-  width: 170px;
+  /* width: 190px; */
   font-size: .85em; }
 
 .filter-container-right a {
@@ -2171,6 +2171,10 @@ body {
   width: 30%;
   float: left;
   padding-top: 5px; }
+
+.product-result-left img {
+  display: block;
+  margin: auto; }
 
 .product-result-right {
   margin-left: 5%;
@@ -2241,6 +2245,9 @@ body {
 @media screen and (min-width: 1201px) {
   .header-tag-line h4 {
     margin-top: 100px; } }
+
+.logo a {
+  box-shadow: none; }
 
 .filter-form form {
   display: block; }
