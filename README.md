@@ -9,7 +9,7 @@ To our knowledge, eco☆shopper is the only way by which users can exclusively v
 Aquilent’s user-centric Agile methodology guides all design and development efforts towards rapidly building off of the minimum-viable product (MVP) and iteratively adding functionality. In complete alignment with the U.S. Digital Services Playbook, we use modern, open-source tools and DevOps procedures to promote efficiencies and yield the benefits of continuous integration, automated testing, continuous deployment, and constant monitoring. The “continuous everything” mindset affords Aquilent the institutional processes to “always be shipping” quality products.
 
 ![Aquilent's "Continuous Everything" Agile Methodology](doc/images/Figure2.jpg)
-Format: ![Graphic Representing Aquilent's "Continuous Everything" Agile Methodology](url)
+Format:![Graphic Representing Aquilent's "Continuous Everything" Agile Methodology](http://www.amazon.com)
 
 Our Agile methodology for eco☆shopper was driven by a highly integrated “Scrum” team that stayed in constant communication to plan short-cycle design and development releases to quickly elevate the MVP and provide a basis for continuous evolution. Central to our focus were the needs of users - in-depth interviews, persona development, and usability testing ensured eco☆shopper end-users were at the center of every business and technical decision.
 
