@@ -9,7 +9,7 @@
 <div class="usa-grid">
 <div class="usa-width-one-whole">
       <div class="filter-container clearfix">
-          <div class="filter-container-left">{{ $total }} Certified {{ $categories[$category] }}</div>
+          <div class="filter-container-left"><strong>{{ $total }}</strong> Certified {{ $categories[$category] }}</div>
           <div class="filter-container-right clearfix">
               <label class="sort-left" for="sort-filter">Sort:</label>
               <div class="sort-right">
@@ -34,7 +34,7 @@
       <h5>{{ $item['TITLE'] }}</h5>
       <p class="prod-data">
           <span class="gray">By: {{ $item['BRAND'] }}</span><br />
-          Estimated Annual Energy Use (kWh/yr): {{ ($item['ENERGYUSE'] == 9999) ? 'N/A' :  $item['ENERGYUSE'] }}<br />
+          EPA Estimated Annual Energy Use (kWh/yr): {{ ($item['ENERGYUSE'] == 9999) ? 'N/A' :  $item['ENERGYUSE'] }}<br />
           Price: {{ $item['FORMATTEDPRICE'] }}<br />
 
           {{-- <span class="rating-stars">

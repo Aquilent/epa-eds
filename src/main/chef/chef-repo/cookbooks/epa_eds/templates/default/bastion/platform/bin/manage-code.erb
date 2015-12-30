@@ -213,6 +213,13 @@ function copy_sources {
     else 
         writeln "No varnish sources found"
     fi
+    if [ -d "${PLATFORM_HOME}/conf/php" ]; then
+        writeln "Copy files in ${PLATFORM_HOME}/conf/php to ${to_dir}/web/php"
+        ls "${PLATFORM_HOME}/conf/php"
+        cp -rf  "${PLATFORM_HOME}/conf/php" "${to_dir}/web/"
+    else
+        writeln "No templates found to copy in ${PLATFORM_HOME}/conf/php"
+    fi
     #mkdir -p "${dir}/app"
     popd > /dev/null 2>&1
     rm -rf "${dir}"
@@ -317,7 +324,7 @@ function add_phpunit_output {
     local directory="$1"
     local output_type="$2"
     local extension="$3"
-    local output_home="/var/lib/jenkins/jobs/deploy-to-${ENVIRONMENT}/workspace/${directory}"
+    local output_home="/var/lib/jenkins/workspace/deploy-to-${ENVIRONMENT}/${directory}"
     local output_file="${output_home}/${BUILD_TAG}.${extension}"
     mkdir -p "${output_home}"
     chmod 775 "${output_home}"
@@ -331,18 +338,21 @@ function test_code {
     local application_home="${WORK_DIR}/web/php"
     local vendor_home="${application_home}/vendor"
     local phpunit_path="phpunit/phpunit/phpunit"
-    local inline="${vendor_home}/${phpunit_path} --bootstrap ${vendor_home}/autoload.php"
     local output_file=""
+    local inline="/usr/bin/php ${vendor_home}/${phpunit_path}"
+
+    inline="${inline} --bootstrap ${vendor_home}/autoload.php"
 
     writeln "Running PHP unit tests"
     if [ "${BUILD_TAG}" != "" ]; then
-        inline="${inline} "`add_phpunit_output 'test_results' '--log-junit' 'xml'`
+        inline="${inline} "`add_phpunit_output 'test-reports' '--log-junit' 'xml'`
     else 
         writeln "No BUILD_TAG found. Writing results to stdout"
     fi
     inline="${inline} ${application_home}/tests"
 
     install_php_composer "${application_home}"
+
     verbose "About to execute [${inline}]"
     $inline
 }

@@ -21,7 +21,7 @@
   </div>
   <div class="usa-width-one-half home-top">
     
-    <img src="img/appliances1.jpg" alt="">
+    <img src="img/appliances2.jpg" alt="">
     
   </div>
 </div>  

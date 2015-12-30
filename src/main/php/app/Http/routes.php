@@ -30,3 +30,9 @@ Route::get('results', [ 'as' => 'results', function()
 
     return view('results', compact('category', 'categories', 'sort', 'items', 'p', 'total'));
 }]);
+
+Route::get('refresh', [ 'as' => 'refresh', function()
+{
+    $exitCode = Artisan::call('refresh:results');
+    return redirect()->route('index');
+}]);
