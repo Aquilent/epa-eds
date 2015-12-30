@@ -119,10 +119,10 @@ class AmazonConnector {
   public function signRequest($category, $page) {
 
     // Your AWS Access Key ID, as taken from the AWS Your Account page
-    $aws_access_key_id = "AKIAJNRLVHW3Z7PE5WMA";
+    $aws_access_key_id = env('AWS_ACCESS_KEY');
 
     // Your AWS Secret Key corresponding to the above ID, as taken from the AWS Your Account page
-    $aws_secret_key = "tCpN+e7LRq0lHDuDi6UtY+wC0qCeE/9o/r3VXdbd";
+    $aws_secret_key = env('AWS_SECRET_ACCESS_KEY');
 
     // The region you are interested in
     $endpoint = "webservices.amazon.com";
@@ -132,8 +132,8 @@ class AmazonConnector {
     $params = array(
         "Service" => "AWSECommerceService",
         "Operation" => "ItemSearch",
-        "AWSAccessKeyId" => "AKIAJNRLVHW3Z7PE5WMA",
-        "AssociateTag" => "sideambi-20",
+        "AWSAccessKeyId" => $aws_access_key_id,
+        "AssociateTag" => env('AWS_ASSOCIATE_TAG'),
         "SearchIndex" => "Appliances",
         "Keywords" => "Energy Star",
         "ResponseGroup" => "Images,ItemAttributes,Reviews,SalesRank,OfferSummary,Offers",
