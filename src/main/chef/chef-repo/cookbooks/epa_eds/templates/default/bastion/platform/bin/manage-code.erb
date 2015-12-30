@@ -215,7 +215,6 @@ function copy_sources {
     fi
     if [ -d "${PLATFORM_HOME}/conf/php" ]; then
         writeln "Copy files in ${PLATFORM_HOME}/conf/php to ${to_dir}/web/php"
-        ls "${PLATFORM_HOME}/conf/php"
         cp -rf  "${PLATFORM_HOME}/conf/php" "${to_dir}/web/"
     else
         writeln "No templates found to copy in ${PLATFORM_HOME}/conf/php"
