@@ -14,7 +14,7 @@ Aquilent’s user-centric Agile methodology guides all design and development ef
 
 Our Agile methodology for eco☆shopper was driven by a highly integrated “Scrum” team that stayed in constant communication to plan short-cycle design and development releases to quickly elevate the MVP and provide a basis for continuous evolution. Central to our focus were the needs of users - in-depth interviews, persona development, and usability testing ensured eco☆shopper end-users were at the center of every business and technical decision.
 
-![alt text](doc/images/Figure3-4.jpg "Graphic Representing "Graphics Representing Both Digital Services Tools and Aquilent Team")
+![alt text](doc/images/Figure3-4.jpg "Graphics Representing Both Digital Services Tools and Aquilent EPA Team")
 
 The following GSA Labor Categories were fractionally used by Aquilent to execute the prototype:
  
