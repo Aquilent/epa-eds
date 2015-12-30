@@ -29,8 +29,7 @@ There are a variety of strategic directions to take eco☆shopper. The chief imp
 ##4	Relevant Digital Services Performance
 Aquilent maintains current and recent past performance supporting other federal agencies that require the same type of Digital Services support that EPA is seeking:
 
-![Logos of Digital Services Customers](doc/images/Figure6.jpg)
-Format: ![Logos of Digital Services Customers](url)
+![alt text](doc/images/Figure6.jpg "Logos of Aquilent Digital Services Customers")
 
 * Performing DevOps in close collaboration with 18F on the Cloud.gov portfolio
 * Leveraged DevOps and Agile for the Healthy Living Assessment and MyHealtheVet portals
