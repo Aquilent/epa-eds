@@ -26,13 +26,13 @@ The following GSA Labor Categories were fractionally used by Aquilent to execute
 * QA Engineer
  
 ##3 Future Improvements
-![eco☆shopper Usability Testing](/epa-eds/doc/images/Readme/Figure5.jpg)
+![eco☆shopper Usability Testing](doc/images/Figure5.jpg)
 Format: ![Graphic Representing eco☆shopper Usability Testing](url)There are a variety of strategic directions to take eco☆shopper. The chief improvement covering the greatest unmet need would be including APIs from BestBuy, HomeDepot, Lowe’s and others to create a one-stop price and feature comparison destination for ENERGY STAR products. Beyond this, additional opportunities exist to incorporate social proof mechanisms to foster greater confidence in purchasing ENERGY STAR products and establishing it as the normative behavior.
 
 ##4	Relevant Digital Services Performance
 Aquilent maintains current and recent past performance supporting other federal agencies that require the same type of Digital Services support that EPA is seeking:
 
-![Logos of Digital Services Customers](/epa-eds/doc/images/Readme/Figure5.jpg)
+![Logos of Digital Services Customers](doc/images/Figure6.jpg)
 Format: ![Logos of Digital Services Customers](url)
 
 * Performing DevOps in close collaboration with 18F on the Cloud.gov portfolio
