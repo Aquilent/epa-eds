@@ -12,8 +12,7 @@ Aquilent’s user-centric Agile methodology guides all design and development ef
 
 Our Agile methodology for eco☆shopper was driven by a highly integrated “Scrum” team that stayed in constant communication to plan short-cycle design and development releases to quickly elevate the MVP and provide a basis for continuous evolution. Central to our focus were the needs of users - in-depth interviews, persona development, and usability testing ensured eco☆shopper end-users were at the center of every business and technical decision.
 
-![Digital Services Tools and Aquilent Team](doc/images/Figure3-4.jpg)
-Format: ![Graphic Representing Digital Services Tools and Aquilent Team](url)
+![alt text](doc/images/Figure3-4.jpg "Graphic Representing "Graphics Representing Both Digital Services Tools and Aquilent Team")
 
 The following GSA Labor Categories were fractionally used by Aquilent to execute the prototype:
  
@@ -25,8 +24,7 @@ The following GSA Labor Categories were fractionally used by Aquilent to execute
 * QA Engineer
  
 ##3 Future Improvements
-![eco☆shopper Usability Testing](doc/images/Figure5.jpg)
-Format: ![Graphic Representing eco☆shopper Usability Testing](url)There are a variety of strategic directions to take eco☆shopper. The chief improvement covering the greatest unmet need would be including APIs from BestBuy, HomeDepot, Lowe’s and others to create a one-stop price and feature comparison destination for ENERGY STAR products. Beyond this, additional opportunities exist to incorporate social proof mechanisms to foster greater confidence in purchasing ENERGY STAR products and establishing it as the normative behavior.
+There are a variety of strategic directions to take eco☆shopper. The chief improvement covering the greatest unmet need would be including APIs from BestBuy, HomeDepot, Lowe’s and others to create a one-stop price and feature comparison destination for ENERGY STAR products. Beyond this, additional opportunities exist to incorporate social proof mechanisms to foster greater confidence in purchasing ENERGY STAR products and establishing it as the normative behavior.
 
 ##4	Relevant Digital Services Performance
 Aquilent maintains current and recent past performance supporting other federal agencies that require the same type of Digital Services support that EPA is seeking:
