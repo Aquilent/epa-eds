@@ -2133,7 +2133,7 @@ body {
 .filter-container-right {
   float: right;
   vertical-align: middle;
-  width: 193px;
+  /* width: 193px; */
   font-size: .85em; }
 
 .filter-container-right a {
