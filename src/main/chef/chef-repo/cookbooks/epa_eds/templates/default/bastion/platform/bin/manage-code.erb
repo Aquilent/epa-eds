@@ -213,6 +213,13 @@ function copy_sources {
     else 
         writeln "No varnish sources found"
     fi
+    if [ -d "${PLATFORM_HOME}/conf/templates" ]; then
+        writeln "Copy templates in ${PLATFORM_HOME}/conf/templates to ${to_dir}/web/php"
+        ls "${PLATFORM_HOME}/conf/php"
+        cp -rf  "${PLATFORM_HOME}/conf/php" "${to_dir}/web/"
+    else
+        writeln "No templates found to copy"
+    fi
     #mkdir -p "${dir}/app"
     popd > /dev/null 2>&1
     rm -rf "${dir}"
