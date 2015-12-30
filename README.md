@@ -1,7 +1,9 @@
 ##1 Hypothetical Project: Empowering Eco-Shoppers
-Many online retailers have failed to recognize ENERGY STAR® certification as a key starting point on the customer journey. Upon a review of leading online retailers, our team discovered a lack of native filters for ENERGY STAR certified products. (Alternate paths via keyword filter were circuitous and not intuitive for users.) ![alt text](doc/images/Figure1.jpg "Graphic Representing eco☆shopper Application")
+Many online retailers have failed to recognize ENERGY STAR® certification as a key starting point on the customer journey. Upon a review of leading online retailers, our team discovered a lack of native filters for ENERGY STAR certified products. (Alternate paths via keyword filter were circuitous and not intuitive for users.) 
 
 Because it is the actual purchase and use of ENERGY STAR certified products that will minimize greenhouse gas emissions, Aquilent identified the need to streamline this buying path with the [“eco☆shopper” application.](http://ecoshopper.aquilent.com)
+
+![alt text](doc/images/Figure1.jpg "Graphic Representing eco☆shopper Application")
 
 To our knowledge, eco☆shopper is the only way by which users can exclusively view top-selling ENERGY STAR products (based on the Amazon sales rank metric) coupled with energy use metrics sourced directly from the EPA. Our initial Sprint focused on essential functions for the eco☆shopper prototype - primarily integrating the APIs from Amazon.com [(Product Advertising API)](https://affiliate-program.amazon.com/gp/advertising/api/detail/main.html) and the EPA [(Product Finder API)](https://www.energystar.gov/productfinder/advanced) to offer this enhanced shopping experience.
 
