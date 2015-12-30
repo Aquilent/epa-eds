@@ -1,5 +1,5 @@
 ##1 Hypothetical Project: Empowering Eco-Shoppers
-Many online retailers have failed to recognize ENERGY STAR® certification as a key starting point on the customer journey. Upon a review of leading online retailers, our team discovered a lack of native filters for ENERGY STAR certified products. (Alternate paths via keyword filter were circuitous and not intuitive for users.) 
+Many online retailers have failed to recognize ENERGY STAR® certification as a key starting point on the customer journey. Upon a review of leading online retailers, our team discovered a lack of native filters for ENERGY STAR certified products. (Alternate paths via keyword filter were circuitous and not intuitive for users.) ![alt text](doc/images/Figure1.jpg "Graphic Representing eco☆shopper Application")
 
 Because it is the actual purchase and use of ENERGY STAR certified products that will minimize greenhouse gas emissions, Aquilent identified the need to streamline this buying path with the [“eco☆shopper” application.](http://ecoshopper.aquilent.com)
 
