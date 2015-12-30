@@ -1,5 +1,7 @@
 @extends('layout')
 
+@section('page-title', 'Eco Shopper - Home')
+
 @section('content')
 @include('partials.category-selector')
 <div class="usa-grid">
@@ -9,7 +11,7 @@
     <ul>
       <li>See top-selling products.</li> 
 
-      <li>Read buyer reviews.</li> 
+      <li>Sort by price.</li> 
 
       <li>Compare energy efficiency.</li>                 
     </ul>
@@ -19,7 +21,7 @@
   </div>
   <div class="usa-width-one-half home-top">
     
-    <img src="img/appliances1.jpg" alt="">
+    <img src="img/appliances2.jpg" alt="">
     
   </div>
 </div>  

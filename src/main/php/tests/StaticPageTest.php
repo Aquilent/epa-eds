@@ -1,5 +1,7 @@
 <?php
 
+use App\AmazonConnector;
+
 class StaticPageTest extends TestCase {
 
 	/**
@@ -7,12 +9,34 @@ class StaticPageTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testHomePage()
+	public function testIndexPage()
 	{
-		$response = $this->route('GET', 'home');
+		$response = $this->route('GET', 'index');
 
 		$this->assertResponseOk();
-		$this->assertContains('PROTOTYPE-NAME-HERE', $response->getContent());
+		$this->assertContains('Eco Shopper - Home', $response->getContent());
+	}
+
+	/**
+	 * Tests that Home page displays correctly
+	 *
+	 * @return void
+	 */
+	public function testBackgroundTask()
+	{
+		// Clear cache
+		Cache::flush();
+
+		// Run background task
+		$exitCode = Artisan::call('refresh:results');
+
+		// Assert job ran successfully
+		$this->assertEquals(0, $exitCode);
+
+		// Check that cache values were set
+		foreach(array_keys(AmazonConnector::$Categories) AS $category) {
+			$this->assertTrue(Cache::has($category));
+		}
 	}
 
 	/**
@@ -20,12 +44,12 @@ class StaticPageTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testDisclaimersPage()
+	public function testResultsPage()
 	{
-		$response = $this->call('GET', 'disclaimers');
+		$response = $this->route('GET', 'results', ['category' => 'washers']);
 
 		$this->assertResponseOk();
-		$this->assertContains('About the Data', $response->getContent());
+		$this->assertContains('Certified Clothes Washers', $response->getContent());
 	}
 
 }

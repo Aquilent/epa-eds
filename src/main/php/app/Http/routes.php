@@ -12,26 +12,27 @@
 */
 Route::get('/', [ 'as' => 'index', function()
 {
-    return view('index', [
-        'category' => null
-    ]);
-
+    return view('index', [ 'category' => null ]);
 }]);
 
 Route::get('results', [ 'as' => 'results', function()
 {
-    $awsConnector = new App\AmazonConnector;
     $category = Request::input('category');
     $categories = App\AmazonConnector::$Categories;
 
     $p = Request::has('p') ? Request::input('p') : 1;
     $sort = Request::input('sort');
 
+    $awsConnector = new App\AmazonConnector;
     $allItems = $awsConnector->getCachedItems($category);
     $items = ($sort) ? $allItems->sortBy($sort)->forPage($p, 10) : $allItems->forPage($p, 10);
     $total = count($allItems);
 
-    //dd(json_decode(json_encode($allItems)));
-
     return view('results', compact('category', 'categories', 'sort', 'items', 'p', 'total'));
+}]);
+
+Route::get('refresh', [ 'as' => 'refresh', function()
+{
+    $exitCode = Artisan::call('refresh:results');
+    return redirect()->route('index');
 }]);

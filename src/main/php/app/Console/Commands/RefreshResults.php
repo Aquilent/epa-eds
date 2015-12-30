@@ -13,7 +13,7 @@ class RefreshResults extends Command {
 	 *
 	 * @var string
 	 */
-	protected $name = 'refresh-results';
+	protected $name = 'refresh:results';
 
 	/**
 	 * The console command description.
