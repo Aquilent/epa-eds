@@ -64,8 +64,8 @@
     <div class="usa-footer-secondary_section">
       <div class="usa-grid">
         <div class="usa-footer-logo footer-right">
-          <a href="http://www.aquilent.com" style="box-shadow: none;"><img src="img/aquilent-logo.png" alt="Aquilent"></a>
-          <p>Developed by Aquilent &copy; 2015 | All rights reserved.</p>
+          <a href="http://www.aquilent.com" style="box-shadow: none;"><img src="img/aquilent-logo-new.png" alt="Aquilent"></a>
+          <p>Developed by Aquilent &copy; 2015 - {{ Carbon\Carbon::now()->year }} | All rights reserved.</p>
         </div>
       </div>
     </div>
